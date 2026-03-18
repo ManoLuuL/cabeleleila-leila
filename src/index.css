@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* react-day-picker custom styles */
+.rdp-custom {
+  --rdp-accent-color: #db2777;
+  --rdp-background-color: #fdf2f8;
+}
+
+.rdp-custom .rdp-day_selected,
+.rdp-custom .rdp-day_selected:hover {
+  background-color: #db2777;
+  color: white;
+}
+
+.rdp-custom .rdp-day:hover:not(.rdp-day_selected) {
+  background-color: #fdf2f8;
+}
