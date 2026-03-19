@@ -12,8 +12,8 @@ interface ServiceSelectorProps {
 
 export function ServiceSelector({ selected, onChange }: ServiceSelectorProps) {
   const toggle = (service: Service) => {
-    const isSelected = selected.some((s) => s.id === service.id)
-    onChange(isSelected ? selected.filter((s) => s.id !== service.id) : [...selected, service])
+    const isSelected = selected.some((s) => s.name === service.name)
+    onChange(isSelected ? selected.filter((s) => s.name !== service.name) : [...selected, service])
   }
 
   const totalCents    = sumCents(selected.map((s) => s.priceInCents))
@@ -23,7 +23,7 @@ export function ServiceSelector({ selected, onChange }: ServiceSelectorProps) {
     <div className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {SALON_SERVICES.map((service) => {
-          const isSelected = selected.some((s) => s.id === service.id)
+          const isSelected = selected.some((s) => s.name === service.name)
           return (
             <motion.button
               key={service.id}

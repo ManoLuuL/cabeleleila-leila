@@ -1,54 +1,24 @@
 /**
  * Repository layer — pure data access, no business logic.
- * Abstracts IndexedDB operations behind a clean interface.
+ * Calls the /api/appointments REST endpoints.
  */
-import { openDB, type IDBPDatabase } from 'idb'
-import type { Appointment } from '../types'
-
-const DB_NAME = 'leila-salon'
-const DB_VERSION = 1
-const STORE_NAME = 'appointments'
-
-let _db: IDBPDatabase | null = null
-
-async function getDatabase(): Promise<IDBPDatabase> {
-  if (_db) return _db
-  _db = await openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' })
-        store.createIndex('clientPhone', 'clientPhone')
-        store.createIndex('date', 'date')
-        store.createIndex('status', 'status')
-      }
-    },
-  })
-  return _db
-}
+import type { Appointment, AppointmentUpdateInput } from '../types'
+import { apiClient } from '../lib/api.client'
 
 export const appointmentRepository = {
   async findAll(): Promise<Appointment[]> {
-    const db = await getDatabase()
-    return db.getAll(STORE_NAME)
+    return apiClient.get<Appointment[]>('/appointments')
   },
 
-  async findById(id: string): Promise<Appointment | undefined> {
-    const db = await getDatabase()
-    return db.get(STORE_NAME, id)
+  async create(input: Omit<Appointment, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<Appointment> {
+    return apiClient.post<Appointment>('/appointments', input)
   },
 
-  async findByPhone(phone: string): Promise<Appointment[]> {
-    const db = await getDatabase()
-    return db.getAllFromIndex(STORE_NAME, 'clientPhone', phone)
-  },
-
-  async save(appointment: Appointment): Promise<void> {
-    const db = await getDatabase()
-    await db.put(STORE_NAME, appointment)
+  async update(id: string, input: AppointmentUpdateInput): Promise<Appointment> {
+    return apiClient.put<Appointment>(`/appointments/${id}`, input)
   },
 
   async remove(id: string): Promise<void> {
-    const db = await getDatabase()
-    await db.delete(STORE_NAME, id)
+    await apiClient.delete(`/appointments/${id}`)
   },
 }

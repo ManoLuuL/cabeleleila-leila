@@ -7,7 +7,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/style.css'
-import { CalendarIcon, AlertCircle } from 'lucide-react'
+import { CalendarIcon, AlertCircle, User } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -16,6 +16,7 @@ import { TimeSlotPicker } from './TimeSlotPicker'
 import type { Appointment } from '../../types'
 import { useBookingForm } from '../../hooks/use-booking-form.hook'
 import { formatShortDate } from '../../lib/date.utils'
+
 interface BookingFormProps {
   initialData?: Appointment
   onSuccess: (appointment: Appointment) => void
@@ -41,13 +42,17 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
     sameWeekSuggestionDate,
     isSubmitting,
     isEditing,
+    hasUserPrefill,
     handleDateSelect,
     applySuggestedDate,
     handleSubmit,
     handlePhoneChange,
   } = useBookingForm({ initialData, onSuccess, onError })
 
-  const { register, setValue, formState: { errors } } = form
+  const { register, setValue, getValues, formState: { errors } } = form
+
+  const totalSteps = hasUserPrefill ? 2 : 3
+  const visualStep = hasUserPrefill ? step - 1 : step
 
   const slideVariants = {
     enter:  { opacity: 0, x: 20 },
@@ -57,13 +62,12 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Progress bar */}
       <div className="flex gap-1">
-        {[1, 2, 3].map((n) => (
+        {Array.from({ length: totalSteps }).map((_, i) => (
           <div
-            key={n}
+            key={i}
             className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-              step >= n ? 'bg-pink-500' : 'bg-gray-200'
+              visualStep > i ? 'bg-pink-500' : 'bg-gray-200'
             }`}
           />
         ))}
@@ -71,25 +75,12 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
 
       <AnimatePresence mode="wait">
 
-        {/* ── Step 1: Client data ── */}
-        {step === 1 && (
-          <motion.div
-            key="step-1"
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            className="space-y-4"
-          >
+        {step === 1 && !hasUserPrefill && (
+          <motion.div key="step-1" variants={slideVariants} initial="enter" animate="center" exit="exit" className="space-y-4">
             <StepLabel step={1} label="Seus dados" />
 
             <FormField label="Nome completo" error={errors.clientName?.message}>
-              <Input
-                id="clientName"
-                placeholder="Nome e sobrenome"
-                autoComplete="name"
-                {...register('clientName')}
-              />
+              <Input id="clientName" placeholder="Nome e sobrenome" autoComplete="name" {...register('clientName')} />
             </FormField>
 
             <FormField label="Telefone / WhatsApp" error={errors.clientPhone?.message}>
@@ -104,36 +95,30 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
             </FormField>
 
             <FormField label="E-mail" error={errors.clientEmail?.message}>
-              <Input
-                id="clientEmail"
-                type="email"
-                placeholder="seu@email.com"
-                autoComplete="email"
-                {...register('clientEmail')}
-              />
+              <Input id="clientEmail" type="email" placeholder="seu@email.com" autoComplete="email" {...register('clientEmail')} />
             </FormField>
 
-            {/* Validates step 1 fields before advancing */}
-            <Button type="button" className="w-full" onClick={goToStep2}>
-              Próximo
-            </Button>
+            <Button type="button" className="w-full" onClick={goToStep2}>Próximo</Button>
           </motion.div>
         )}
 
-        {/* ── Step 2: Services ── */}
         {step === 2 && (
-          <motion.div
-            key="step-2"
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            className="space-y-4"
-          >
-            <StepLabel step={2} label="Serviços" />
+          <motion.div key="step-2" variants={slideVariants} initial="enter" animate="center" exit="exit" className="space-y-4">
+            <StepLabel step={hasUserPrefill ? 1 : 2} label="Serviços" />
+
+            {hasUserPrefill && (
+              <div className="flex items-center gap-2 bg-pink-50 border border-pink-100 rounded-lg px-3 py-2">
+                <User className="h-4 w-4 text-pink-400 shrink-0" />
+                <div className="text-sm text-pink-800 min-w-0">
+                  <span className="font-medium">{getValues('clientName')}</span>
+                  <span className="text-pink-400 mx-1">·</span>
+                  <span className="text-pink-600">{getValues('clientPhone')}</span>
+                </div>
+              </div>
+            )}
+
             <ServiceSelector selected={selectedServices} onChange={setSelectedServices} />
 
-            {/* Service combination warnings */}
             <AnimatePresence>
               {serviceWarnings.map((w, i) => (
                 <motion.div
@@ -150,34 +135,20 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
             </AnimatePresence>
 
             <div className="flex gap-2">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => goBack(1)}>
-                Voltar
-              </Button>
-              <Button
-                type="button"
-                className="flex-1"
-                disabled={selectedServices.length === 0}
-                onClick={goToStep3}
-              >
+              {!hasUserPrefill && (
+                <Button type="button" variant="outline" className="flex-1" onClick={() => goBack(1)}>Voltar</Button>
+              )}
+              <Button type="button" className="flex-1" disabled={selectedServices.length === 0} onClick={goToStep3}>
                 Próximo
               </Button>
             </div>
           </motion.div>
         )}
 
-        {/* ── Step 3: Date & time ── */}
         {step === 3 && (
-          <motion.div
-            key="step-3"
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            className="space-y-4"
-          >
-            <StepLabel step={3} label="Data e horário" />
+          <motion.div key="step-3" variants={slideVariants} initial="enter" animate="center" exit="exit" className="space-y-4">
+            <StepLabel step={hasUserPrefill ? 2 : 3} label="Data e horário" />
 
-            {/* Same-week suggestion banner */}
             <AnimatePresence>
               {sameWeekSuggestionDate && (
                 <motion.div
@@ -193,9 +164,7 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
                       Que tal agendar na mesma data ({formatShortDate(sameWeekSuggestionDate)}) para facilitar?
                     </p>
                     <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
+                      type="button" size="sm" variant="outline"
                       className="mt-2 border-amber-400 text-amber-700 hover:bg-amber-100"
                       onClick={applySuggestedDate}
                     >
@@ -223,7 +192,6 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
                   <CalendarIcon className="h-3.5 w-3.5 text-pink-500" />
                   Horário — {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
                 </Label>
-
                 <TimeSlotPicker
                   availableSlots={availableSlots}
                   selectedTime={watchedTime}
@@ -236,27 +204,13 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
             )}
 
             <FormField label="Observações (opcional)" error={errors.notes?.message}>
-              <Input
-                id="notes"
-                placeholder="Alguma observação? (máx. 300 caracteres)"
-                {...register('notes')}
-              />
+              <Input id="notes" placeholder="Alguma observação? (máx. 300 caracteres)" {...register('notes')} />
             </FormField>
 
             <div className="flex gap-2">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => goBack(2)}>
-                Voltar
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1"
-                disabled={!selectedDate || !watchedTime || isSubmitting}
-              >
-                {isSubmitting
-                  ? 'Salvando...'
-                  : isEditing
-                  ? 'Salvar alterações'
-                  : 'Confirmar agendamento'}
+              <Button type="button" variant="outline" className="flex-1" onClick={() => goBack(2)}>Voltar</Button>
+              <Button type="submit" className="flex-1" disabled={!selectedDate || !watchedTime || isSubmitting}>
+                {isSubmitting ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Confirmar agendamento'}
               </Button>
             </div>
           </motion.div>
@@ -267,8 +221,6 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
   )
 }
 
-// ── Internal sub-components ──────────────────────────────────────────────────
-
 function StepLabel({ step, label }: { step: number; label: string }) {
   return (
     <p className="text-sm font-medium text-pink-700 uppercase tracking-wide">
@@ -277,15 +229,7 @@ function StepLabel({ step, label }: { step: number; label: string }) {
   )
 }
 
-function FormField({
-  label,
-  error,
-  children,
-}: {
-  label: string
-  error?: string
-  children: React.ReactNode
-}) {
+function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
       <Label>{label}</Label>

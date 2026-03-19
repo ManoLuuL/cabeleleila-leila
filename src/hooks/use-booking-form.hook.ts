@@ -6,8 +6,8 @@ import { useState, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
-import type { Appointment, AppointmentCreateInput, Service } from '../types'
-import { useAppointmentStore } from '../store'
+import type { Appointment, AppointmentCreateInput, AppointmentUpdateInput, Service } from '../types'
+import { useAppointmentStore, useAuthStore } from '../store'
 import {
   appointmentService,
   TimeConflictError,
@@ -34,12 +34,23 @@ interface UseBookingFormOptions {
 
 export function useBookingForm({ initialData, onSuccess, onError }: UseBookingFormOptions) {
   const { appointments, createAppointment, updateAppointment } = useAppointmentStore()
+  const { user } = useAuthStore()
+
+  // If logged-in user data is available and not editing, pre-fill from user profile
+  const prefill = {
+    clientName:  initialData?.clientName  ?? user?.name  ?? '',
+    clientPhone: initialData?.clientPhone ?? user?.phone ?? '',
+    clientEmail: initialData?.clientEmail ?? user?.email ?? '',
+  }
+
+  // Skip step 1 when creating a new appointment (data comes from logged-in user)
+  const initialStep = !initialData && user ? 2 : 1
 
   const [selectedServices, setSelectedServices] = useState<Service[]>(initialData?.services ?? [])
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     initialData ? new Date(`${initialData.date}T12:00:00`) : undefined,
   )
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(initialStep)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [sameWeekSuggestionDate, setSameWeekSuggestionDate] = useState<string | null>(null)
 
@@ -47,11 +58,11 @@ export function useBookingForm({ initialData, onSuccess, onError }: UseBookingFo
     resolver: zodResolver(bookingFormSchema),
     mode: 'onTouched',
     defaultValues: {
-      clientName:  initialData?.clientName  ?? '',
-      clientPhone: initialData?.clientPhone ?? '',
-      clientEmail: initialData?.clientEmail ?? '',
-      time:        initialData?.time        ?? '',
-      notes:       initialData?.notes       ?? '',
+      clientName:  prefill.clientName,
+      clientPhone: prefill.clientPhone,
+      clientEmail: prefill.clientEmail,
+      time:        initialData?.time  ?? '',
+      notes:       initialData?.notes ?? '',
     },
   })
 
@@ -144,20 +155,30 @@ export function useBookingForm({ initialData, onSuccess, onError }: UseBookingFo
     if (!selectedDate || selectedServices.length === 0) return
     setIsSubmitting(true)
     try {
-      const input: AppointmentCreateInput = {
-        clientName:  values.clientName,
-        clientPhone: values.clientPhone,
-        clientEmail: values.clientEmail,
-        services:    selectedServices,
-        date:        format(selectedDate, 'yyyy-MM-dd'),
-        time:        values.time,
-        status:      'pending',
-        notes:       values.notes,
-      }
       if (initialData) {
+        // Edit: only send changed fields, preserve existing status
+        const input: AppointmentUpdateInput = {
+          clientName:  values.clientName,
+          clientPhone: values.clientPhone,
+          clientEmail: values.clientEmail,
+          services:    selectedServices,
+          date:        format(selectedDate, 'yyyy-MM-dd'),
+          time:        values.time,
+          notes:       values.notes,
+        }
         await updateAppointment(initialData.id, input)
         onSuccess({ ...initialData, ...input })
       } else {
+        const input: AppointmentCreateInput = {
+          clientName:  values.clientName,
+          clientPhone: values.clientPhone,
+          clientEmail: values.clientEmail,
+          services:    selectedServices,
+          date:        format(selectedDate, 'yyyy-MM-dd'),
+          time:        values.time,
+          status:      'pending',
+          notes:       values.notes,
+        }
         const created = await createAppointment(input)
         onSuccess(created)
       }
@@ -190,6 +211,7 @@ export function useBookingForm({ initialData, onSuccess, onError }: UseBookingFo
     sameWeekSuggestionDate,
     isSubmitting,
     isEditing: !!initialData,
+    hasUserPrefill: !!user && !initialData,
     handleDateSelect,
     applySuggestedDate,
     handleSubmit,

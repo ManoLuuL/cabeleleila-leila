@@ -1,43 +1,34 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Search, History } from 'lucide-react'
+import { Plus, History, CalendarCheck } from 'lucide-react'
 import { ToastProvider } from '../components/ui'
-import { Button, Input, Label, Dialog, DialogContent, DialogHeader, DialogTitle, Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui'
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui'
 import { BookingForm } from '../components/booking'
 import { AppointmentCard } from '../components/appointment'
 import { EmptyState, ToastRenderer } from '../components/common'
-import { useAppointmentStore } from '../store'
+import { useAppointmentStore, useAuthStore } from '../store'
 import { useToast } from '../hooks'
 import { CancellationWindowError } from '../services'
 import type { Appointment } from '../types'
 
 export function ClientPage() {
   const { appointments, loadAppointments, cancelAppointmentByClient } = useAppointmentStore()
+  const { user } = useAuthStore()
   const { toasts, showToast, dismissToast } = useToast()
 
-  const [isBookingOpen, setIsBookingOpen]       = useState(false)
+  const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
-  const [searchPhone, setSearchPhone]           = useState('')
-  const [historyPhone, setHistoryPhone]         = useState('')
 
   useEffect(() => { loadAppointments() }, [loadAppointments])
 
-  const normalizePhone = (p: string) => p.replace(/\D/g, '')
+  // API already filters by userId — just split active vs history
+  const activeAppointments = appointments
+    .filter((a) => a.status !== 'cancelled' && a.status !== 'completed')
+    .sort((a, b) => a.date.localeCompare(b.date))
 
-  const activeAppointments = searchPhone
-    ? appointments.filter(
-        (a) =>
-          normalizePhone(a.clientPhone).includes(normalizePhone(searchPhone)) &&
-          a.status !== 'cancelled' &&
-          a.status !== 'completed',
-      )
-    : []
-
-  const historyAppointments = historyPhone
-    ? [...appointments]
-        .filter((a) => normalizePhone(a.clientPhone).includes(normalizePhone(historyPhone)))
-        .sort((a, b) => b.date.localeCompare(a.date))
-    : []
+  const historyAppointments = [...appointments]
+    .filter((a) => a.status === 'cancelled' || a.status === 'completed')
+    .sort((a, b) => b.date.localeCompare(a.date))
 
   const openNewBooking = () => {
     setEditingAppointment(null)
@@ -82,10 +73,12 @@ export function ClientPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-2"
+          className="text-center space-y-1"
         >
           <h1 className="text-3xl font-bold text-gray-900">✂️ Salão da Leila</h1>
-          <p className="text-gray-500">Agende seus serviços de beleza com facilidade</p>
+          <p className="text-gray-500">
+            Olá, <span className="font-medium text-pink-600">{user?.name.split(' ')[0]}</span>! Agende seus serviços de beleza.
+          </p>
         </motion.div>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
@@ -98,7 +91,7 @@ export function ClientPage() {
         <Tabs defaultValue="active">
           <TabsList className="w-full">
             <TabsTrigger value="active" className="flex-1">
-              <Search className="h-4 w-4 mr-1" />
+              <CalendarCheck className="h-4 w-4 mr-1" />
               Meus Agendamentos
             </TabsTrigger>
             <TabsTrigger value="history" className="flex-1">
@@ -107,43 +100,25 @@ export function ClientPage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="active" className="space-y-4">
-            <div className="space-y-1">
-              <Label>Buscar pelo telefone</Label>
-              <Input
-                placeholder="(11) 99999-9999"
-                value={searchPhone}
-                onChange={(e) => setSearchPhone(e.target.value)}
-              />
-            </div>
+          <TabsContent value="active" className="space-y-4 pt-2">
             <AnimatePresence>
-              {searchPhone && activeAppointments.length === 0 && (
-                <EmptyState message="Nenhum agendamento ativo encontrado" />
+              {activeAppointments.length === 0 && (
+                <EmptyState message="Nenhum agendamento ativo. Que tal marcar um horário?" />
               )}
-              {activeAppointments
-                .sort((a, b) => a.date.localeCompare(b.date))
-                .map((a) => (
-                  <AppointmentCard
-                    key={a.id}
-                    appointment={a}
-                    onEdit={openEditBooking}
-                    onCancel={handleCancelAppointment}
-                  />
-                ))}
+              {activeAppointments.map((a) => (
+                <AppointmentCard
+                  key={a.id}
+                  appointment={a}
+                  onEdit={openEditBooking}
+                  onCancel={handleCancelAppointment}
+                />
+              ))}
             </AnimatePresence>
           </TabsContent>
 
-          <TabsContent value="history" className="space-y-4">
-            <div className="space-y-1">
-              <Label>Seu telefone para ver o histórico</Label>
-              <Input
-                placeholder="(11) 99999-9999"
-                value={historyPhone}
-                onChange={(e) => setHistoryPhone(e.target.value)}
-              />
-            </div>
+          <TabsContent value="history" className="space-y-4 pt-2">
             <AnimatePresence>
-              {historyPhone && historyAppointments.length === 0 && (
+              {historyAppointments.length === 0 && (
                 <EmptyState message="Nenhum histórico encontrado" />
               )}
               {historyAppointments.map((a) => (

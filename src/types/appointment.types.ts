@@ -11,6 +11,7 @@ export interface Service {
 
 export interface Appointment {
   id: string
+  userId?: string    // set by the server
   clientName: string
   clientPhone: string
   clientEmail: string
@@ -23,5 +24,6 @@ export interface Appointment {
   updatedAt: string  // ISO timestamp
 }
 
-export type AppointmentCreateInput = Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>
+export type AppointmentCreateInput = Omit<Appointment, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
 export type AppointmentUpdateInput = Partial<AppointmentCreateInput>
+

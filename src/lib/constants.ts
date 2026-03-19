@@ -23,14 +23,14 @@ export const TIME_SLOTS: string[] = [
 
 // Prices stored in cents to avoid floating-point issues
 export const SALON_SERVICES: Service[] = [
-  { id: generateId(), name: 'Corte de Cabelo', durationMinutes: 45,  priceInCents: 6000  },
-  { id: generateId(), name: 'Coloração',        durationMinutes: 120, priceInCents: 15000 },
-  { id: generateId(), name: 'Escova',           durationMinutes: 60,  priceInCents: 7000  },
-  { id: generateId(), name: 'Hidratação',       durationMinutes: 60,  priceInCents: 8000  },
-  { id: generateId(), name: 'Manicure',         durationMinutes: 45,  priceInCents: 4000  },
-  { id: generateId(), name: 'Pedicure',         durationMinutes: 60,  priceInCents: 5000  },
-  { id: generateId(), name: 'Sobrancelha',      durationMinutes: 30,  priceInCents: 3000  },
-  { id: generateId(), name: 'Progressiva',      durationMinutes: 180, priceInCents: 20000 },
+  { id: 'svc-corte',      name: 'Corte de Cabelo', durationMinutes: 45,  priceInCents: 6000  },
+  { id: 'svc-coloracao',  name: 'Coloração',        durationMinutes: 120, priceInCents: 15000 },
+  { id: 'svc-escova',     name: 'Escova',           durationMinutes: 60,  priceInCents: 7000  },
+  { id: 'svc-hidratacao', name: 'Hidratação',       durationMinutes: 60,  priceInCents: 8000  },
+  { id: 'svc-manicure',   name: 'Manicure',         durationMinutes: 45,  priceInCents: 4000  },
+  { id: 'svc-pedicure',   name: 'Pedicure',         durationMinutes: 60,  priceInCents: 5000  },
+  { id: 'svc-sobrancelha',name: 'Sobrancelha',      durationMinutes: 30,  priceInCents: 3000  },
+  { id: 'svc-progressiva',name: 'Progressiva',      durationMinutes: 180, priceInCents: 20000 },
 ]
 
 export const STATUS_LABELS: Record<AppointmentStatus, string> = {

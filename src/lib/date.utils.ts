@@ -53,7 +53,9 @@ export function getWeekBounds(date: Date): { start: Date; end: Date } {
 }
 
 export function formatDisplayDate(dateStr: string): string {
-  return format(parseISO(dateStr), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+  const parsed = parseISO(dateStr)
+  if (isNaN(parsed.getTime())) return dateStr
+  return format(parsed, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
 }
 
 export function formatShortDate(dateStr: string): string {

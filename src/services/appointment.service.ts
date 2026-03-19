@@ -14,7 +14,6 @@
  */
 import type { Appointment, AppointmentCreateInput, AppointmentUpdateInput, AppointmentStatus } from '../types'
 import { appointmentRepository } from '../repositories'
-import { generateId } from '../lib/utils'
 import { areDatesInSameWeek, isDateInPast, isSalonClosed, isTooFarInAdvance, todayString, canEditOnline } from '../lib/date.utils'
 import { hasTimeConflict, exceedsWorkingHours } from '../lib/schedule.utils'
 import { ALLOWED_STATUS_TRANSITIONS } from '../lib/constants'
@@ -113,44 +112,42 @@ export const appointmentService = {
     validateSchedule(all, input.date, input.time, input.services)
     validateNoDuplicate(all, input.clientPhone, input.date)
 
-    const now = new Date().toISOString()
-    const appointment: Appointment = { ...input, id: generateId(), createdAt: now, updatedAt: now }
-    await appointmentRepository.save(appointment)
-    return appointment
+    return appointmentRepository.create(input)
   },
 
   async update(id: string, input: AppointmentUpdateInput): Promise<Appointment | null> {
-    const existing = await appointmentRepository.findById(id)
+    // Fetch current state to run client-side validations
+    const all = await appointmentRepository.findAll()
+    const existing = all.find((a) => a.id === id)
     if (!existing) return null
 
     if (existing.status === 'completed' || existing.status === 'cancelled') {
       throw new ImmutableAppointmentError(existing.status)
     }
 
-    const dateChanged     = input.date      !== undefined && input.date      !== existing.date
-    const timeChanged     = input.time      !== undefined && input.time      !== existing.time
-    const servicesChanged = input.services  !== undefined &&
-      JSON.stringify(input.services) !== JSON.stringify(existing.services)
-    const phoneChanged    = input.clientPhone !== undefined && input.clientPhone !== existing.clientPhone
+    const date     = input.date        ?? existing.date
+    const time     = input.time        ?? existing.time
+    const services = input.services    ?? existing.services
+    const phone    = input.clientPhone ?? existing.clientPhone
 
-    if (dateChanged || timeChanged || servicesChanged) {
-      const all      = await appointmentRepository.findAll()
-      const services = input.services    ?? existing.services
-      const date     = input.date        ?? existing.date
-      const time     = input.time        ?? existing.time
-      const phone    = input.clientPhone ?? existing.clientPhone
+    const dateChanged  = date  !== existing.date
+    const timeChanged  = time  !== existing.time
+    const phoneChanged = phone !== existing.clientPhone
 
+    if (dateChanged || timeChanged || input.services !== undefined) {
       validateSchedule(all, date, time, services, id)
-      if (dateChanged || phoneChanged) validateNoDuplicate(all, phone, date, id)
+    }
+    if (dateChanged || phoneChanged) {
+      validateNoDuplicate(all, phone, date, id)
     }
 
-    const updated: Appointment = { ...existing, ...input, updatedAt: new Date().toISOString() }
-    await appointmentRepository.save(updated)
+    const updated = await appointmentRepository.update(id, input)
     return updated
   },
 
   async updateStatus(id: string, newStatus: AppointmentStatus): Promise<Appointment | null> {
-    const existing = await appointmentRepository.findById(id)
+    const all = await appointmentRepository.findAll()
+    const existing = all.find((a) => a.id === id)
     if (!existing) return null
 
     const allowed = ALLOWED_STATUS_TRANSITIONS[existing.status]
@@ -158,9 +155,7 @@ export const appointmentService = {
       throw new InvalidStatusTransitionError(existing.status, newStatus)
     }
 
-    const updated: Appointment = { ...existing, status: newStatus, updatedAt: new Date().toISOString() }
-    await appointmentRepository.save(updated)
-    return updated
+    return appointmentRepository.update(id, { status: newStatus })
   },
 
   /**
@@ -168,7 +163,8 @@ export const appointmentService = {
    * Admin cancellations should use updateStatus directly.
    */
   async cancelByClient(id: string): Promise<Appointment | null> {
-    const existing = await appointmentRepository.findById(id)
+    const all = await appointmentRepository.findAll()
+    const existing = all.find((a) => a.id === id)
     if (!existing) return null
 
     if (!canEditOnline(existing.date)) throw new CancellationWindowError()
