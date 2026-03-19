@@ -1,6 +1,6 @@
 /**
  * ViewModel — bridges the service layer with the UI.
- * Holds reactive state and exposes actions consumed by components.
+ * All domain errors from the service layer are re-thrown for hooks/pages to handle.
  */
 import { create } from 'zustand'
 import type { Appointment, AppointmentCreateInput, AppointmentUpdateInput, AppointmentStatus } from '../types'
@@ -16,12 +16,13 @@ interface AppointmentActions {
   createAppointment: (input: AppointmentCreateInput) => Promise<Appointment>
   updateAppointment: (id: string, input: AppointmentUpdateInput) => Promise<void>
   updateAppointmentStatus: (id: string, status: AppointmentStatus) => Promise<void>
+  cancelAppointmentByClient: (id: string) => Promise<void>
   deleteAppointment: (id: string) => Promise<void>
 }
 
 type AppointmentStore = AppointmentState & AppointmentActions
 
-export const useAppointmentStore = create<AppointmentStore>((set, get) => ({
+export const useAppointmentStore = create<AppointmentStore>((set) => ({
   appointments: [],
   isLoading: false,
 
@@ -47,6 +48,14 @@ export const useAppointmentStore = create<AppointmentStore>((set, get) => ({
 
   updateAppointmentStatus: async (id, status) => {
     const updated = await appointmentService.updateStatus(id, status)
+    if (!updated) return
+    set((state) => ({
+      appointments: state.appointments.map((a) => (a.id === id ? updated : a)),
+    }))
+  },
+
+  cancelAppointmentByClient: async (id) => {
+    const updated = await appointmentService.cancelByClient(id)
     if (!updated) return
     set((state) => ({
       appointments: state.appointments.map((a) => (a.id === id ? updated : a)),

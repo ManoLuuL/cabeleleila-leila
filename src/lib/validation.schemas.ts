@@ -1,14 +1,48 @@
 import { z } from 'zod'
+import { VALID_DDD_CODES } from './constants'
+
+// ── Phone ────────────────────────────────────────────────────────────────────
+
+const phoneSchema = z
+  .string()
+  .transform((v) => v.replace(/\D/g, ''))
+  .pipe(
+    z.string()
+      .min(10, 'Telefone inválido — mínimo 10 dígitos')
+      .max(11, 'Telefone inválido — máximo 11 dígitos')
+      .refine((digits) => {
+        const ddd = parseInt(digits.slice(0, 2), 10)
+        return VALID_DDD_CODES.has(ddd)
+      }, 'DDD inválido')
+      .refine((digits) => {
+        // Mobile numbers (11 digits) must start with 9 after DDD
+        if (digits.length === 11) return digits[2] === '9'
+        return true
+      }, 'Celular deve começar com 9 após o DDD')
+      .refine((digits) => {
+        // Reject sequences of identical digits (e.g. 11111111111)
+        return !/^(\d)\1+$/.test(digits)
+      }, 'Telefone inválido'),
+  )
+
+// ── Name ─────────────────────────────────────────────────────────────────────
+
+const nameSchema = z
+  .string()
+  .min(3, 'Nome deve ter ao menos 3 caracteres')
+  .max(80, 'Nome muito longo')
+  .regex(/^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/, 'Nome não pode conter números ou símbolos')
+  .refine((v) => v.trim().split(/\s+/).length >= 2, 'Informe nome e sobrenome')
+  .transform((v) => v.trim().replace(/\s+/g, ' ')) // normalize whitespace
+
+// ── Booking form ─────────────────────────────────────────────────────────────
 
 export const bookingFormSchema = z.object({
-  clientName: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
-  clientPhone: z
-    .string()
-    .min(10, 'Telefone inválido')
-    .transform((v) => v.replace(/\D/g, '')),
-  clientEmail: z.string().email('E-mail inválido'),
-  time: z.string().min(1, 'Selecione um horário'),
-  notes: z.string().optional(),
+  clientName:  nameSchema,
+  clientPhone: phoneSchema,
+  clientEmail: z.string().email('E-mail inválido').max(120, 'E-mail muito longo').toLowerCase(),
+  time:        z.string().min(1, 'Selecione um horário'),
+  notes:       z.string().max(300, 'Observação muito longa (máx. 300 caracteres)').optional(),
 })
 
 export type BookingFormValues = z.infer<typeof bookingFormSchema>

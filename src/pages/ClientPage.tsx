@@ -8,10 +8,11 @@ import { AppointmentCard } from '../components/appointment'
 import { EmptyState, ToastRenderer } from '../components/common'
 import { useAppointmentStore } from '../store'
 import { useToast } from '../hooks'
+import { CancellationWindowError } from '../services'
 import type { Appointment } from '../types'
 
 export function ClientPage() {
-  const { appointments, loadAppointments, updateAppointmentStatus } = useAppointmentStore()
+  const { appointments, loadAppointments, cancelAppointmentByClient } = useAppointmentStore()
   const { toasts, showToast, dismissToast } = useToast()
 
   const [isBookingOpen, setIsBookingOpen]       = useState(false)
@@ -58,9 +59,21 @@ export function ClientPage() {
     })
   }
 
+  const handleBookingError = (message: string) => {
+    showToast({ title: 'Não foi possível agendar', description: message, variant: 'error' })
+  }
+
   const handleCancelAppointment = async (appointment: Appointment) => {
-    await updateAppointmentStatus(appointment.id, 'cancelled')
-    showToast({ title: 'Agendamento cancelado' })
+    try {
+      await cancelAppointmentByClient(appointment.id)
+      showToast({ title: 'Agendamento cancelado' })
+    } catch (err) {
+      if (err instanceof CancellationWindowError) {
+        showToast({ title: 'Cancelamento não permitido', description: err.message, variant: 'error' })
+      } else {
+        showToast({ title: 'Erro ao cancelar agendamento', variant: 'error' })
+      }
+    }
   }
 
   return (
@@ -150,6 +163,7 @@ export function ClientPage() {
             <BookingForm
               initialData={editingAppointment ?? undefined}
               onSuccess={handleBookingSuccess}
+              onError={handleBookingError}
             />
           </DialogContent>
         </Dialog>

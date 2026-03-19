@@ -1,16 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { BarChart3, CalendarCheck, Users, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react'
+import { BarChart3, CalendarCheck, Users, DollarSign, ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
 import { ToastProvider } from '../components/ui'
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui'
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Tabs, TabsList, TabsTrigger, TabsContent, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui'
 import { BookingForm } from '../components/booking'
 import { AppointmentRow, StatCard, WeeklyCalendar, StatusBreakdown } from '../components/admin'
 import { EmptyState, ToastRenderer } from '../components/common'
 import { useAppointmentStore } from '../store'
 import { useToast, useWeeklyStats } from '../hooks'
 import { formatCurrency } from '../lib/currency.utils'
+import { InvalidStatusTransitionError, ImmutableAppointmentError } from '../services'
+import { STATUS_LABELS } from '../lib/constants'
 import type { Appointment, AppointmentStatus } from '../types'
 
 export function AdminPage() {
@@ -19,23 +21,47 @@ export function AdminPage() {
 
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [weekOffset, setWeekOffset] = useState(0)
+  const [filterStatus, setFilterStatus] = useState<AppointmentStatus | 'all'>('all')
+  const [filterSearch, setFilterSearch] = useState('')
 
   useEffect(() => { loadAppointments() }, [loadAppointments])
 
   const { stats, weekStart, weekEnd, weekAppointments } = useWeeklyStats(appointments, weekOffset)
 
-  const sortedAppointments = [...appointments].sort(
-    (a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time),
-  )
+  const sortedAppointments = useMemo(() => {
+    const normalizedSearch = filterSearch.toLowerCase().trim()
+    return [...appointments]
+      .filter((a) => {
+        const matchesStatus = filterStatus === 'all' || a.status === filterStatus
+        const matchesSearch =
+          !normalizedSearch ||
+          a.clientName.toLowerCase().includes(normalizedSearch) ||
+          a.clientPhone.replace(/\D/g, '').includes(normalizedSearch.replace(/\D/g, ''))
+        return matchesStatus && matchesSearch
+      })
+      .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time))
+  }, [appointments, filterStatus, filterSearch])
 
   const handleStatusChange = async (id: string, status: AppointmentStatus) => {
-    await updateAppointmentStatus(id, status)
-    showToast({ title: 'Status atualizado', variant: 'success' })
+    try {
+      await updateAppointmentStatus(id, status)
+      showToast({ title: 'Status atualizado', variant: 'success' })
+    } catch (err) {
+      if (err instanceof InvalidStatusTransitionError || err instanceof ImmutableAppointmentError) {
+        showToast({ title: 'Operação inválida', description: err.message, variant: 'error' })
+      } else {
+        showToast({ title: 'Erro ao atualizar status', variant: 'error' })
+      }
+    }
   }
 
   const handleEditSuccess = () => {
     setEditingAppointment(null)
     showToast({ title: 'Agendamento atualizado!', variant: 'success' })
+  }
+
+  const handleEditError = (message: string) => {
+    showToast({ title: 'Não foi possível atualizar', description: message, variant: 'error' })
   }
 
   return (
@@ -60,8 +86,48 @@ export function AdminPage() {
 
           {/* ── Appointments tab ── */}
           <TabsContent value="appointments" className="space-y-4">
+            {/* Filter bar */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <Input
+                  placeholder="Buscar por nome ou telefone"
+                  value={filterSearch}
+                  onChange={(e) => setFilterSearch(e.target.value)}
+                  className="pl-8 pr-8"
+                />
+                {filterSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <Select
+                value={filterStatus}
+                onValueChange={(v) => setFilterStatus(v as AppointmentStatus | 'all')}
+              >
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {(Object.keys(STATUS_LABELS) as AppointmentStatus[]).map((s) => (
+                    <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {sortedAppointments.length === 0 && (
-              <EmptyState message="Nenhum agendamento ainda" />
+              <EmptyState message={
+                filterSearch || filterStatus !== 'all'
+                  ? 'Nenhum agendamento encontrado para os filtros aplicados'
+                  : 'Nenhum agendamento ainda'
+              } />
             )}
             {sortedAppointments.map((appointment) => (
               <AppointmentRow
@@ -137,6 +203,7 @@ export function AdminPage() {
               <BookingForm
                 initialData={editingAppointment}
                 onSuccess={handleEditSuccess}
+                onError={handleEditError}
               />
             )}
           </DialogContent>
