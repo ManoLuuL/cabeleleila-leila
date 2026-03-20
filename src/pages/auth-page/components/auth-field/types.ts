@@ -1,0 +1,1 @@
+export type AuthFieldProps = { label: string; error?: string; children: React.ReactNode }

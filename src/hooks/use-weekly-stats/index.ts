@@ -1,20 +1,13 @@
-/**
- * Derives weekly statistics from the appointment list.
- * Pure computation — no side effects.
- */
 import { useMemo } from 'react'
 import { parseISO, isWithinInterval } from 'date-fns'
-import type { Appointment, WeeklyStats } from '../types'
-import { getWeekBounds } from '../lib/date.utils'
-import { sumCents } from '../lib/currency.utils'
+import type { Appointment, WeeklyStats } from '../../types'
+import { getWeekBounds } from '../../lib/date.utils'
+import { sumCents } from '../../lib/currency.utils'
+import type { UseWeeklyStatsReturn } from './types'
 
-export function useWeeklyStats(appointments: Appointment[], weekOffset: number): {
-  stats: WeeklyStats
-  weekStart: Date
-  weekEnd: Date
-  weekAppointments: Appointment[]
-} {
-  return useMemo(() => {
+export const useWeeklyStats = (appointments: Appointment[], weekOffset: number): UseWeeklyStatsReturn => {
+
+  const stats = useMemo(() => {
     const baseDate = new Date()
     baseDate.setDate(baseDate.getDate() + weekOffset * 7)
     const { start: weekStart, end: weekEnd } = getWeekBounds(baseDate)
@@ -37,4 +30,6 @@ export function useWeeklyStats(appointments: Appointment[], weekOffset: number):
 
     return { stats, weekStart, weekEnd, weekAppointments }
   }, [appointments, weekOffset])
+
+  return stats
 }

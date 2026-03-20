@@ -1,21 +1,17 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, History, CalendarCheck, LogIn } from 'lucide-react'
-import { ToastProvider } from '../components/ui'
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui'
-import { BookingForm } from '../components/booking'
-import { AppointmentCard } from '../components/appointment'
-import { EmptyState, ToastRenderer } from '../components/common'
-import { useAppointmentStore, useAuthStore } from '../store'
-import { useToast } from '../hooks'
-import { CancellationWindowError } from '../services'
-import { AuthPage } from './AuthPage'
-import type { Appointment } from '../types'
-
-type ModalState =
-  | { type: 'closed' }
-  | { type: 'booking'; editing?: Appointment }
-  | { type: 'auth' }
+import { ToastProvider } from '../../components/ui'
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui'
+import { BookingForm } from '../../components/booking'
+import { AppointmentCard } from '../../components/appointment'
+import { EmptyState, ToastRenderer } from '../../components/common'
+import { useAppointmentStore, useAuthStore } from '../../store'
+import { useToast } from '../../hooks'
+import { CancellationWindowError } from '../../services'
+import { AuthPage } from '../auth-page'
+import type { Appointment } from '../../types'
+import type { ModalState } from './types'
 
 export function ClientPage() {
   const { appointments, loadAppointments, cancelAppointmentByClient } = useAppointmentStore()
@@ -60,7 +56,7 @@ export function ClientPage() {
     showToast({ title: 'Não foi possível agendar', description: message, variant: 'error' })
   }
 
-  // After login: close auth modal and open booking
+
   const handleAuthSuccess = async () => {
     await loadAppointments()
     setModal({ type: 'booking' })
@@ -165,7 +161,7 @@ export function ClientPage() {
           </motion.div>
         )}
 
-        {/* Booking modal — only opens when logged in */}
+       
         <Dialog open={isBookingOpen} onOpenChange={(open) => !open && setModal({ type: 'closed' })}>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -181,7 +177,7 @@ export function ClientPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Auth modal */}
+        
         <Dialog open={isAuthOpen} onOpenChange={(open) => !open && setModal({ type: 'closed' })}>
           <DialogContent className="max-w-sm p-0 overflow-hidden">
             <AuthPage onSuccess={handleAuthSuccess} embedded />

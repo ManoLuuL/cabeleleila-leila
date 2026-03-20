@@ -1,12 +1,3 @@
-/**
- * Purely presentational booking form.
- * All logic is in useBookingForm hook.
- *
- * Step 1 → Services
- * Step 2 → Date, time & notes → Confirm
- *
- * User is always logged in when this form is shown.
- */
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -19,7 +10,7 @@ import { Label } from '../ui/label'
 import { ServiceSelector } from './ServiceSelector'
 import { TimeSlotPicker } from './TimeSlotPicker'
 import type { Appointment } from '../../types'
-import { useBookingForm } from '../../hooks/use-booking-form.hook'
+import { useBookingForm } from '../../hooks/use-booking-form'
 import { formatShortDate } from '../../lib/date.utils'
 
 interface BookingFormProps {

@@ -1,6 +1,3 @@
-/**
- * Run once to create tables: npx tsx scripts/migrate.ts
- */
 import { Pool } from 'pg'
 import * as dotenv from 'dotenv'
 dotenv.config()

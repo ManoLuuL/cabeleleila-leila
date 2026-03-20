@@ -1,7 +1,3 @@
-/**
- * Repository layer — pure data access, no business logic.
- * Calls the /api/appointments REST endpoints.
- */
 import type { Appointment, AppointmentUpdateInput } from '../types'
 import { apiClient } from '../lib/api.client'
 

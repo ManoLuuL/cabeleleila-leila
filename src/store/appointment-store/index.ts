@@ -1,26 +1,7 @@
-/**
- * ViewModel — bridges the service layer with the UI.
- * All domain errors from the service layer are re-thrown for hooks/pages to handle.
- */
 import { create } from 'zustand'
-import type { Appointment, AppointmentCreateInput, AppointmentUpdateInput, AppointmentStatus } from '../types'
-import { appointmentService } from '../services'
+import type { AppointmentStore } from './types'
+import { appointmentService } from '../../services'
 
-interface AppointmentState {
-  appointments: Appointment[]
-  isLoading: boolean
-}
-
-interface AppointmentActions {
-  loadAppointments: () => Promise<void>
-  createAppointment: (input: AppointmentCreateInput) => Promise<Appointment>
-  updateAppointment: (id: string, input: AppointmentUpdateInput) => Promise<void>
-  updateAppointmentStatus: (id: string, status: AppointmentStatus) => Promise<void>
-  cancelAppointmentByClient: (id: string) => Promise<void>
-  deleteAppointment: (id: string) => Promise<void>
-}
-
-type AppointmentStore = AppointmentState & AppointmentActions
 
 export const useAppointmentStore = create<AppointmentStore>((set) => ({
   appointments: [],

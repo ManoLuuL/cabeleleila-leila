@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Navbar } from './components/layout'
 import { AuthGuard } from './components/auth/AuthGuard'
 import { ClientPage, AdminPage, AuthPage } from './pages'
@@ -7,8 +7,7 @@ import { useAuthStore } from './store'
 
 function AppRoutes() {
   const { restore, isLoading, user } = useAuthStore()
-  const navigate = useNavigate()
-
+ 
   useEffect(() => { restore() }, [restore])
 
   if (isLoading) {

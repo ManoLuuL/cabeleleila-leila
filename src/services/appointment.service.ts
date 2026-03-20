@@ -1,17 +1,3 @@
-/**
- * Service layer — business logic and domain rules.
- *
- * Rules enforced here:
- *  1. No booking in the past
- *  2. No booking on closed days (Sunday)
- *  3. No booking beyond MAX_ADVANCE_DAYS
- *  4. No booking that exceeds working hours
- *  5. No time slot conflict with existing appointments
- *  6. No duplicate active appointment for the same client on the same day
- *  7. Status transitions must follow the allowed flow
- *  8. Completed/cancelled appointments cannot be modified
- *  9. Client cannot cancel online if < 2 days away
- */
 import type { Appointment, AppointmentCreateInput, AppointmentUpdateInput, AppointmentStatus } from '../types'
 import { appointmentRepository } from '../repositories'
 import { areDatesInSameWeek, isDateInPast, isSalonClosed, isTooFarInAdvance, todayString, canEditOnline } from '../lib/date.utils'
@@ -104,7 +90,7 @@ export const appointmentService = {
   },
 
   async update(id: string, input: AppointmentUpdateInput): Promise<Appointment | null> {
-    // Fetch current state to run client-side validations
+   
     const all = await appointmentRepository.findAll()
     const existing = all.find((a) => a.id === id)
     if (!existing) return null
@@ -141,10 +127,7 @@ export const appointmentService = {
     return appointmentRepository.update(id, { status: newStatus })
   },
 
-  /**
-   * Client-facing cancellation — enforces the 2-day online cancellation window.
-   * Admin cancellations should use updateStatus directly.
-   */
+  
   async cancelByClient(id: string): Promise<Appointment | null> {
     const all = await appointmentRepository.findAll()
     const existing = all.find((a) => a.id === id)

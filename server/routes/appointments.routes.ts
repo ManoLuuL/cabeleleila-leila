@@ -5,7 +5,6 @@ import { extractToken } from '../auth'
 const router = Router()
 
 function rowToAppointment(r: Record<string, unknown>) {
-  // pg returns DATE columns as JS Date objects — extract yyyy-MM-dd safely
   const rawDate = r.date
   const dateStr =
     rawDate instanceof Date

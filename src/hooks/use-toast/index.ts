@@ -1,13 +1,8 @@
 import { useState, useCallback } from 'react'
-import type { ToastMessage, ToastVariant } from '../types'
+import type { ToastMessage } from '../../types'
+import type { ShowToastOptions } from './types'
 
-interface ShowToastOptions {
-  title: string
-  description?: string
-  variant?: ToastVariant
-}
-
-export function useToast() {
+export const useToast = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([])
 
   const showToast = useCallback(({ title, description, variant = 'default' }: ShowToastOptions) => {

@@ -4,36 +4,12 @@ import { Scissors } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Button, Input, Label } from '../components/ui'
-import { useAuthStore } from '../store'
-import { ApiError } from '../lib/api.client'
-
-// ── Schemas ──────────────────────────────────────────────────────────────────
-
-const loginSchema = z.object({
-  email:    z.string().email('E-mail inválido'),
-  password: z.string().min(1, 'Senha obrigatória'),
-})
-
-const registerSchema = z.object({
-  name:     z.string().min(3, 'Nome deve ter ao menos 3 caracteres')
-              .regex(/^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/, 'Nome inválido')
-              .refine((v) => v.trim().split(/\s+/).length >= 2, 'Informe nome e sobrenome'),
-  phone:    z.string().min(10, 'Telefone inválido'),
-  email:    z.string().email('E-mail inválido'),
-  password: z.string().min(6, 'Senha deve ter ao menos 6 caracteres'),
-})
-
-type LoginValues    = z.infer<typeof loginSchema>
-type RegisterValues = z.infer<typeof registerSchema>
-
-// ── Component ─────────────────────────────────────────────────────────────────
-
-interface AuthPageProps {
-  onSuccess?: () => void
-  embedded?: boolean
-}
+import type { AuthPageProps, LoginValues, RegisterValues } from './types'
+import { useAuthStore } from '../../store'
+import { loginSchema, registerSchema } from './consts'
+import { ApiError } from '../../lib/api.client'
+import { Button, Input } from '../../components/ui'
+import { Field } from './components/auth-field'
 
 export function AuthPage({ onSuccess, embedded }: AuthPageProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
@@ -87,7 +63,7 @@ export function AuthPage({ onSuccess, embedded }: AuthPageProps) {
         animate={{ opacity: 1, y: 0 }}
         className={embedded ? 'space-y-6' : 'w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6'}
       >
-        {/* Logo */}
+     
         <div className="text-center space-y-1">
           <div className="flex justify-center">
             <Scissors className="h-8 w-8 text-pink-600" />
@@ -98,7 +74,7 @@ export function AuthPage({ onSuccess, embedded }: AuthPageProps) {
           </p>
         </div>
 
-        {/* Mode toggle */}
+       
         <div className="flex rounded-lg border border-gray-200 p-1 gap-1">
           {(['login', 'register'] as const).map((m) => (
             <button
@@ -173,12 +149,3 @@ export function AuthPage({ onSuccess, embedded }: AuthPageProps) {
   )
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <Label>{label}</Label>
-      {children}
-      {error && <p className="text-xs text-red-500">{error}</p>}
-    </div>
-  )
-}

@@ -1,19 +1,8 @@
 import { create } from 'zustand'
-import type { User, AuthSession } from '../types'
-import { apiClient } from '../lib/api.client'
+import type { User, AuthSession } from '../../types'
+import { apiClient } from '../../lib/api.client'
+import type { AuthActions, AuthState } from './types'
 
-interface AuthState {
-  user: User | null
-  token: string | null
-  isLoading: boolean
-}
-
-interface AuthActions {
-  login:    (email: string, password: string) => Promise<void>
-  register: (name: string, phone: string, email: string, password: string) => Promise<void>
-  logout:   () => void
-  restore:  () => Promise<void>
-}
 
 export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   user:      null,

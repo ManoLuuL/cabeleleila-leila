@@ -1,5 +1,3 @@
-// UI-specific types (not domain types)
-
 export type ToastVariant = 'default' | 'success' | 'error'
 
 export interface ToastMessage {

@@ -33,7 +33,7 @@ const nameSchema = z
   .max(80, 'Nome muito longo')
   .regex(/^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/, 'Nome não pode conter números ou símbolos')
   .refine((v) => v.trim().split(/\s+/).length >= 2, 'Informe nome e sobrenome')
-  .transform((v) => v.trim().replace(/\s+/g, ' ')) // normalize whitespace
+  .transform((v) => v.trim().replace(/\s+/g, ' ')) 
 
 // ── Booking form ─────────────────────────────────────────────────────────────
 

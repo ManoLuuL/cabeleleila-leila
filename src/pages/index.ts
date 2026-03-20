@@ -1,3 +1,3 @@
-export { ClientPage } from './ClientPage'
-export { AdminPage } from './AdminPage'
-export { AuthPage } from './AuthPage'
+export { ClientPage } from './client-page'
+export { AdminPage } from './admin-page'
+export { AuthPage } from './auth-page'

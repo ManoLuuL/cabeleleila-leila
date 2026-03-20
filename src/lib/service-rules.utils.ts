@@ -1,7 +1,4 @@
-/**
- * Service combination rules — warns about incompatible or redundant service combos.
- * These are soft warnings (not hard blocks), shown to the client before confirming.
- */
+
 import type { Service } from '../types'
 import { SERVICE_WARNING_RULES } from './constants'
 
@@ -9,10 +6,7 @@ export interface ServiceCombinationWarning {
   message: string
 }
 
-/**
- * Returns all applicable warnings for the given service selection.
- * Returns an empty array if the combination is fine.
- */
+
 export function getServiceCombinationWarnings(
   selected: Service[],
 ): ServiceCombinationWarning[] {

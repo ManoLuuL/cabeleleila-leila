@@ -1,4 +1,3 @@
-// Domain types for the Appointment entity
 
 export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
 
@@ -11,17 +10,17 @@ export interface Service {
 
 export interface Appointment {
   id: string
-  userId?: string    // set by the server
+  userId?: string   
   clientName: string
   clientPhone: string
   clientEmail: string
   services: Service[]
-  date: string       // yyyy-MM-dd
-  time: string       // HH:mm
+  date: string       
+  time: string       
   status: AppointmentStatus
   notes?: string
-  createdAt: string  // ISO timestamp
-  updatedAt: string  // ISO timestamp
+  createdAt: string  
+  updatedAt: string  
 }
 
 export type AppointmentCreateInput = Omit<Appointment, 'id' | 'userId' | 'createdAt' | 'updatedAt'>

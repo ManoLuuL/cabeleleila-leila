@@ -1,17 +1,16 @@
 import type { Service, AppointmentStatus } from '../types'
-import { generateId } from './utils'
 
 // ── Working hours ────────────────────────────────────────────────────────────
 export const WORKING_HOURS = {
-  startMinutes: 8 * 60,   // 08:00
-  endMinutes:   18 * 60,  // 18:00 — no appointment can END after this
+  startMinutes: 8 * 60,   
+  endMinutes:   18 * 60,  
 } as const
 
-/** Maximum days in advance a client can book */
+
 export const MAX_ADVANCE_DAYS = 60
 
-/** Days of the week the salon is closed (0 = Sunday, 6 = Saturday) */
-export const CLOSED_WEEKDAYS: number[] = [0] // closed on Sundays
+
+export const CLOSED_WEEKDAYS: number[] = [0] 
 
 export const TIME_SLOTS: string[] = [
   '08:00', '08:30', '09:00', '09:30',
@@ -21,7 +20,7 @@ export const TIME_SLOTS: string[] = [
   '17:00', '17:30',
 ]
 
-// Prices stored in cents to avoid floating-point issues
+
 export const SALON_SERVICES: Service[] = [
   { id: 'svc-corte',      name: 'Corte de Cabelo', durationMinutes: 45,  priceInCents: 6000  },
   { id: 'svc-coloracao',  name: 'Coloração',        durationMinutes: 120, priceInCents: 15000 },
@@ -78,13 +77,9 @@ export const VALID_DDD_CODES = new Set([
   98, 99,
 ])
 
-/**
- * Service incompatibility rules.
- * If any two service names from the same group are selected together,
- * a warning is shown (not a hard block — Leila decides).
- */
+
 export interface ServiceWarningRule {
-  services: string[]   // service names involved
+  services: string[]   
   message: string
 }
 

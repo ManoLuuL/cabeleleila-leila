@@ -3,17 +3,17 @@ import { motion } from 'framer-motion'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { BarChart3, CalendarCheck, Users, DollarSign, ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
-import { ToastProvider } from '../components/ui'
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Tabs, TabsList, TabsTrigger, TabsContent, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui'
-import { BookingForm } from '../components/booking'
-import { AppointmentRow, StatCard, WeeklyCalendar, StatusBreakdown } from '../components/admin'
-import { EmptyState, ToastRenderer } from '../components/common'
-import { useAppointmentStore } from '../store'
-import { useToast, useWeeklyStats } from '../hooks'
-import { formatCurrency } from '../lib/currency.utils'
-import { InvalidStatusTransitionError, ImmutableAppointmentError } from '../services'
-import { STATUS_LABELS } from '../lib/constants'
-import type { Appointment, AppointmentStatus } from '../types'
+import { useAppointmentStore } from '../../store'
+import { useToast, useWeeklyStats } from '../../hooks'
+import type { Appointment, AppointmentStatus } from '../../types'
+import { ImmutableAppointmentError, InvalidStatusTransitionError } from '../../services'
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, ToastProvider } from '../../components/ui'
+import { STATUS_LABELS } from '../../lib/constants'
+import { EmptyState, ToastRenderer } from '../../components/common'
+import { AppointmentRow, StatCard, StatusBreakdown, WeeklyCalendar } from '../../components/admin'
+import { formatCurrency } from '../../lib/currency.utils'
+import { BookingForm } from '../../components/booking'
+
 
 export function AdminPage() {
   const { appointments, loadAppointments, updateAppointmentStatus } = useAppointmentStore()
@@ -84,9 +84,8 @@ export function AdminPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* ── Appointments tab ── */}
           <TabsContent value="appointments" className="space-y-4">
-            {/* Filter bar */}
+    
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -139,9 +138,9 @@ export function AdminPage() {
             ))}
           </TabsContent>
 
-          {/* ── Dashboard tab ── */}
+         
           <TabsContent value="dashboard" className="space-y-6">
-            {/* Week navigation */}
+        
             <div className="flex items-center justify-between">
               <Button variant="outline" size="icon" onClick={() => setWeekOffset((w) => w - 1)}>
                 <ChevronLeft className="h-4 w-4" />
