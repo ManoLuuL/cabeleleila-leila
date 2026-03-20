@@ -32,11 +32,7 @@ function AppRoutes() {
                 : <AuthPage />
             }
           />
-          <Route path="/" element={
-            <AuthGuard>
-              <ClientPage />
-            </AuthGuard>
-          } />
+          <Route path="/" element={<ClientPage />} />
           <Route path="/admin" element={
             <AuthGuard requireRole="admin">
               <AdminPage />

@@ -1,13 +1,18 @@
 /**
- * Purely presentational form component.
- * All logic is delegated to useBookingForm hook.
+ * Purely presentational booking form.
+ * All logic is in useBookingForm hook.
+ *
+ * Step 1 → Services
+ * Step 2 → Date, time & notes → Confirm
+ *
+ * User is always logged in when this form is shown.
  */
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/style.css'
-import { CalendarIcon, AlertCircle, User } from 'lucide-react'
+import { CalendarIcon, AlertCircle } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -28,7 +33,6 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
     form,
     step,
     goToStep2,
-    goToStep3,
     goBack,
     selectedServices,
     setSelectedServices,
@@ -42,17 +46,12 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
     sameWeekSuggestionDate,
     isSubmitting,
     isEditing,
-    hasUserPrefill,
     handleDateSelect,
     applySuggestedDate,
     handleSubmit,
-    handlePhoneChange,
   } = useBookingForm({ initialData, onSuccess, onError })
 
-  const { register, setValue, getValues, formState: { errors } } = form
-
-  const totalSteps = hasUserPrefill ? 2 : 3
-  const visualStep = hasUserPrefill ? step - 1 : step
+  const { register, setValue, formState: { errors } } = form
 
   const slideVariants = {
     enter:  { opacity: 0, x: 20 },
@@ -61,13 +60,14 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
+      {/* Progress bar */}
       <div className="flex gap-1">
-        {Array.from({ length: totalSteps }).map((_, i) => (
+        {[1, 2].map((s) => (
           <div
-            key={i}
+            key={s}
             className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-              visualStep > i ? 'bg-pink-500' : 'bg-gray-200'
+              step >= s ? 'bg-pink-500' : 'bg-gray-200'
             }`}
           />
         ))}
@@ -75,47 +75,10 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
 
       <AnimatePresence mode="wait">
 
-        {step === 1 && !hasUserPrefill && (
+        {/* ── Step 1: Services ── */}
+        {step === 1 && (
           <motion.div key="step-1" variants={slideVariants} initial="enter" animate="center" exit="exit" className="space-y-4">
-            <StepLabel step={1} label="Seus dados" />
-
-            <FormField label="Nome completo" error={errors.clientName?.message}>
-              <Input id="clientName" placeholder="Nome e sobrenome" autoComplete="name" {...register('clientName')} />
-            </FormField>
-
-            <FormField label="Telefone / WhatsApp" error={errors.clientPhone?.message}>
-              <Input
-                id="clientPhone"
-                placeholder="(11) 99999-9999"
-                inputMode="tel"
-                autoComplete="tel"
-                {...register('clientPhone')}
-                onChange={handlePhoneChange}
-              />
-            </FormField>
-
-            <FormField label="E-mail" error={errors.clientEmail?.message}>
-              <Input id="clientEmail" type="email" placeholder="seu@email.com" autoComplete="email" {...register('clientEmail')} />
-            </FormField>
-
-            <Button type="button" className="w-full" onClick={goToStep2}>Próximo</Button>
-          </motion.div>
-        )}
-
-        {step === 2 && (
-          <motion.div key="step-2" variants={slideVariants} initial="enter" animate="center" exit="exit" className="space-y-4">
-            <StepLabel step={hasUserPrefill ? 1 : 2} label="Serviços" />
-
-            {hasUserPrefill && (
-              <div className="flex items-center gap-2 bg-pink-50 border border-pink-100 rounded-lg px-3 py-2">
-                <User className="h-4 w-4 text-pink-400 shrink-0" />
-                <div className="text-sm text-pink-800 min-w-0">
-                  <span className="font-medium">{getValues('clientName')}</span>
-                  <span className="text-pink-400 mx-1">·</span>
-                  <span className="text-pink-600">{getValues('clientPhone')}</span>
-                </div>
-              </div>
-            )}
+            <StepLabel step={1} label="Serviços" />
 
             <ServiceSelector selected={selectedServices} onChange={setSelectedServices} />
 
@@ -134,20 +97,16 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
               ))}
             </AnimatePresence>
 
-            <div className="flex gap-2">
-              {!hasUserPrefill && (
-                <Button type="button" variant="outline" className="flex-1" onClick={() => goBack(1)}>Voltar</Button>
-              )}
-              <Button type="button" className="flex-1" disabled={selectedServices.length === 0} onClick={goToStep3}>
-                Próximo
-              </Button>
-            </div>
+            <Button type="button" className="w-full" disabled={selectedServices.length === 0} onClick={goToStep2}>
+              Próximo
+            </Button>
           </motion.div>
         )}
 
-        {step === 3 && (
-          <motion.div key="step-3" variants={slideVariants} initial="enter" animate="center" exit="exit" className="space-y-4">
-            <StepLabel step={hasUserPrefill ? 2 : 3} label="Data e horário" />
+        {/* ── Step 2: Date, time & notes ── */}
+        {step === 2 && (
+          <motion.div key="step-2" variants={slideVariants} initial="enter" animate="center" exit="exit" className="space-y-4">
+            <StepLabel step={2} label="Data e horário" />
 
             <AnimatePresence>
               {sameWeekSuggestionDate && (
@@ -203,13 +162,22 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
               </motion.div>
             )}
 
-            <FormField label="Observações (opcional)" error={errors.notes?.message}>
-              <Input id="notes" placeholder="Alguma observação? (máx. 300 caracteres)" {...register('notes')} />
-            </FormField>
+            <div className="space-y-1">
+              <Label>Observações (opcional)</Label>
+              <Input placeholder="Alguma observação? (máx. 300 caracteres)" {...register('notes')} />
+              {errors.notes && <p className="text-xs text-red-500">{errors.notes.message}</p>}
+            </div>
 
             <div className="flex gap-2">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => goBack(2)}>Voltar</Button>
-              <Button type="submit" className="flex-1" disabled={!selectedDate || !watchedTime || isSubmitting}>
+              <Button type="button" variant="outline" className="flex-1" onClick={goBack}>
+                Voltar
+              </Button>
+              <Button
+                type="button"
+                className="flex-1"
+                disabled={!selectedDate || !watchedTime || isSubmitting}
+                onClick={handleSubmit}
+              >
                 {isSubmitting ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Confirmar agendamento'}
               </Button>
             </div>
@@ -217,7 +185,7 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
         )}
 
       </AnimatePresence>
-    </form>
+    </div>
   )
 }
 
@@ -226,15 +194,5 @@ function StepLabel({ step, label }: { step: number; label: string }) {
     <p className="text-sm font-medium text-pink-700 uppercase tracking-wide">
       Passo {step} — {label}
     </p>
-  )
-}
-
-function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <Label>{label}</Label>
-      {children}
-      {error && <p className="text-xs text-red-500">{error}</p>}
-    </div>
   )
 }

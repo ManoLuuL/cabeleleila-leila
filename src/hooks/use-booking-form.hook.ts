@@ -1,6 +1,8 @@
 /**
  * ViewModel hook for the booking form.
- * Encapsulates all form logic, keeping the component purely presentational.
+ *
+ * Flow (create):  Step 1 → Services  →  Step 2 → Date & time  →  Confirm (user always logged in)
+ * Flow (edit):    Same 2 steps, pre-filled from existing appointment.
  */
 import { useState, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
@@ -15,7 +17,6 @@ import {
   ClosedDayError,
   TooFarInAdvanceError,
   WorkingHoursError,
-  DuplicateAppointmentError,
   ImmutableAppointmentError,
   CancellationWindowError,
 } from '../services'
@@ -36,21 +37,13 @@ export function useBookingForm({ initialData, onSuccess, onError }: UseBookingFo
   const { appointments, createAppointment, updateAppointment } = useAppointmentStore()
   const { user } = useAuthStore()
 
-  // If logged-in user data is available and not editing, pre-fill from user profile
-  const prefill = {
-    clientName:  initialData?.clientName  ?? user?.name  ?? '',
-    clientPhone: initialData?.clientPhone ?? user?.phone ?? '',
-    clientEmail: initialData?.clientEmail ?? user?.email ?? '',
-  }
-
-  // Skip step 1 when creating a new appointment (data comes from logged-in user)
-  const initialStep = !initialData && user ? 2 : 1
+  const isEditing = !!initialData
 
   const [selectedServices, setSelectedServices] = useState<Service[]>(initialData?.services ?? [])
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     initialData ? new Date(`${initialData.date}T12:00:00`) : undefined,
   )
-  const [step, setStep] = useState<1 | 2 | 3>(initialStep)
+  const [step, setStep] = useState<1 | 2>(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [sameWeekSuggestionDate, setSameWeekSuggestionDate] = useState<string | null>(null)
 
@@ -58,32 +51,15 @@ export function useBookingForm({ initialData, onSuccess, onError }: UseBookingFo
     resolver: zodResolver(bookingFormSchema),
     mode: 'onTouched',
     defaultValues: {
-      clientName:  prefill.clientName,
-      clientPhone: prefill.clientPhone,
-      clientEmail: prefill.clientEmail,
+      clientName:  initialData?.clientName  ?? user?.name  ?? '',
+      clientPhone: initialData?.clientPhone ?? user?.phone ?? '',
+      clientEmail: initialData?.clientEmail ?? user?.email ?? '',
       time:        initialData?.time  ?? '',
       notes:       initialData?.notes ?? '',
     },
   })
 
-  const watchedPhone = form.watch('clientPhone')
-  const watchedTime  = form.watch('time')
-
-  // ── Phone mask ────────────────────────────────────────────────────────────
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\D/g, '').slice(0, 11)
-    let masked = digits
-    if (digits.length > 10) {
-      masked = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
-    } else if (digits.length > 6) {
-      masked = `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
-    } else if (digits.length > 2) {
-      masked = `(${digits.slice(0, 2)}) ${digits.slice(2)}`
-    } else if (digits.length > 0) {
-      masked = `(${digits}`
-    }
-    form.setValue('clientPhone', masked, { shouldValidate: form.formState.touchedFields.clientPhone })
-  }
+  const watchedTime = form.watch('time')
 
   // ── Disabled days for DayPicker ───────────────────────────────────────────
   const disabledDays = useMemo<Matcher[]>(() => getDisabledDays(), [])
@@ -94,37 +70,37 @@ export function useBookingForm({ initialData, onSuccess, onError }: UseBookingFo
     [selectedServices],
   )
 
-  // ── Total duration of selected services ────────────────────────────────────
+  // ── Total duration ────────────────────────────────────────────────────────
   const totalSelectedDuration = useMemo(
     () => selectedServices.reduce((sum, s) => sum + s.durationMinutes, 0),
     [selectedServices],
   )
 
-  // ── Slots filtered by working hours ───────────────────────────────────────
+  // ── Available slots filtered by working hours ─────────────────────────────
   const availableSlots = useMemo(
     () => getAvailableSlots(TIME_SLOTS, totalSelectedDuration),
     [totalSelectedDuration],
   )
 
-  // ── Blocked slots (conflicts with other appointments) ─────────────────────
+  // ── Blocked slots (conflicts) ─────────────────────────────────────────────
   const blockedSlots = useMemo<Map<string, BlockedSlot>>(() => {
     if (!selectedDate) return new Map()
     const dateStr = format(selectedDate, 'yyyy-MM-dd')
     return getBlockedSlots(appointments, dateStr, initialData?.id)
   }, [selectedDate, appointments, initialData?.id])
 
-  // ── Date selection ─────────────────────────────────────────────────────────
+  // ── Date selection + same-week suggestion ────────────────────────────────
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date)
     setSameWeekSuggestionDate(null)
     form.setValue('time', '')
 
-    if (!date || !watchedPhone) return
+    if (!date || !user?.phone) return
 
     const dateStr = format(date, 'yyyy-MM-dd')
     const existing = appointmentService.findSameWeekAppointment(
       appointments,
-      watchedPhone.replace(/\D/g, ''),
+      user.phone.replace(/\D/g, ''),
       dateStr,
       initialData?.id,
     )
@@ -138,46 +114,38 @@ export function useBookingForm({ initialData, onSuccess, onError }: UseBookingFo
     form.setValue('time', '')
   }
 
-  // ── Step navigation with field-level validation ────────────────────────────
-  const goToStep2 = async () => {
-    const valid = await form.trigger(['clientName', 'clientPhone', 'clientEmail'])
-    if (valid) setStep(2)
-  }
+  // ── Navigation ────────────────────────────────────────────────────────────
+  const goToStep2 = () => { if (selectedServices.length > 0) setStep(2) }
+  const goBack    = () => setStep(1)
 
-  const goToStep3 = () => {
-    if (selectedServices.length > 0) setStep(3)
-  }
+  // ── Submit ────────────────────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    if (!selectedDate || selectedServices.length === 0 || !watchedTime || !user) return
 
-  const goBack = (to: 1 | 2) => setStep(to)
-
-  // ── Submit ─────────────────────────────────────────────────────────────────
-  const handleSubmit = form.handleSubmit(async (values) => {
-    if (!selectedDate || selectedServices.length === 0) return
     setIsSubmitting(true)
     try {
-      if (initialData) {
-        // Edit: only send changed fields, preserve existing status
+      if (isEditing && initialData) {
         const input: AppointmentUpdateInput = {
-          clientName:  values.clientName,
-          clientPhone: values.clientPhone,
-          clientEmail: values.clientEmail,
+          clientName:  user.name,
+          clientPhone: user.phone,
+          clientEmail: user.email,
           services:    selectedServices,
           date:        format(selectedDate, 'yyyy-MM-dd'),
-          time:        values.time,
-          notes:       values.notes,
+          time:        watchedTime,
+          notes:       form.getValues('notes'),
         }
         await updateAppointment(initialData.id, input)
         onSuccess({ ...initialData, ...input })
       } else {
         const input: AppointmentCreateInput = {
-          clientName:  values.clientName,
-          clientPhone: values.clientPhone,
-          clientEmail: values.clientEmail,
+          clientName:  user.name,
+          clientPhone: user.phone,
+          clientEmail: user.email,
           services:    selectedServices,
           date:        format(selectedDate, 'yyyy-MM-dd'),
-          time:        values.time,
+          time:        watchedTime,
           status:      'pending',
-          notes:       values.notes,
+          notes:       form.getValues('notes'),
         }
         const created = await createAppointment(input)
         onSuccess(created)
@@ -191,13 +159,12 @@ export function useBookingForm({ initialData, onSuccess, onError }: UseBookingFo
     } finally {
       setIsSubmitting(false)
     }
-  })
+  }
 
   return {
     form,
     step,
     goToStep2,
-    goToStep3,
     goBack,
     selectedServices,
     setSelectedServices,
@@ -210,16 +177,14 @@ export function useBookingForm({ initialData, onSuccess, onError }: UseBookingFo
     serviceWarnings,
     sameWeekSuggestionDate,
     isSubmitting,
-    isEditing: !!initialData,
-    hasUserPrefill: !!user && !initialData,
+    isEditing,
     handleDateSelect,
     applySuggestedDate,
     handleSubmit,
-    handlePhoneChange,
   }
 }
 
-// ── Error message resolver ───────────────────────────────────────────────────
+// ── Error message resolver ────────────────────────────────────────────────────
 
 function resolveErrorMessage(err: unknown): string {
   if (
@@ -228,7 +193,6 @@ function resolveErrorMessage(err: unknown): string {
     err instanceof ClosedDayError         ||
     err instanceof TooFarInAdvanceError   ||
     err instanceof WorkingHoursError      ||
-    err instanceof DuplicateAppointmentError ||
     err instanceof ImmutableAppointmentError ||
     err instanceof CancellationWindowError
   ) {

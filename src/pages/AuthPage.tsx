@@ -32,9 +32,10 @@ type RegisterValues = z.infer<typeof registerSchema>
 
 interface AuthPageProps {
   onSuccess?: () => void
+  embedded?: boolean
 }
 
-export function AuthPage({ onSuccess }: AuthPageProps) {
+export function AuthPage({ onSuccess, embedded }: AuthPageProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [serverError, setServerError] = useState<string | null>(null)
   const { login, register } = useAuthStore()
@@ -80,11 +81,11 @@ export function AuthPage({ onSuccess }: AuthPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className={embedded ? 'p-6 space-y-6' : 'min-h-screen bg-gray-50 flex items-center justify-center px-4'}>
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6"
+        className={embedded ? 'space-y-6' : 'w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6'}
       >
         {/* Logo */}
         <div className="text-center space-y-1">

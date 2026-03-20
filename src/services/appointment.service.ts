@@ -88,17 +88,6 @@ function validateSchedule(
   if (hasTimeConflict(all, date, time, totalDuration, excludeId)) throw new TimeConflictError()
 }
 
-function validateNoDuplicate(
-  all: Appointment[],
-  phone: string,
-  date: string,
-  excludeId?: string,
-): void {
-  const duplicate = all.find(
-    (a) => a.clientPhone === phone && a.date === date && a.id !== excludeId && a.status !== 'cancelled',
-  )
-  if (duplicate) throw new DuplicateAppointmentError()
-}
 
 // ── Service ──────────────────────────────────────────────────────────────────
 
@@ -110,7 +99,6 @@ export const appointmentService = {
   async create(input: AppointmentCreateInput): Promise<Appointment> {
     const all = await appointmentRepository.findAll()
     validateSchedule(all, input.date, input.time, input.services)
-    validateNoDuplicate(all, input.clientPhone, input.date)
 
     return appointmentRepository.create(input)
   },
@@ -128,17 +116,12 @@ export const appointmentService = {
     const date     = input.date        ?? existing.date
     const time     = input.time        ?? existing.time
     const services = input.services    ?? existing.services
-    const phone    = input.clientPhone ?? existing.clientPhone
 
-    const dateChanged  = date  !== existing.date
-    const timeChanged  = time  !== existing.time
-    const phoneChanged = phone !== existing.clientPhone
+    const dateChanged = date !== existing.date
+    const timeChanged = time !== existing.time
 
     if (dateChanged || timeChanged || input.services !== undefined) {
       validateSchedule(all, date, time, services, id)
-    }
-    if (dateChanged || phoneChanged) {
-      validateNoDuplicate(all, phone, date, id)
     }
 
     const updated = await appointmentRepository.update(id, input)
