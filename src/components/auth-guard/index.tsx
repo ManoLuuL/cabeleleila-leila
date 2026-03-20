@@ -1,12 +1,8 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../../store'
+import type { AuthGuardProps } from './types'
 
-interface AuthGuardProps {
-  children: React.ReactNode
-  requireRole?: 'admin' | 'client'
-}
-
-export function AuthGuard({ children, requireRole }: AuthGuardProps) {
+export const AuthGuard = ({ children, requireRole }: AuthGuardProps) => {
   const { user, isLoading } = useAuthStore()
 
   if (isLoading) return null

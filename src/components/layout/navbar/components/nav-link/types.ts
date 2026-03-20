@@ -1,0 +1,1 @@
+export type NavLinkProps = { to: string; label: string; icon: React.ReactNode; active: boolean }

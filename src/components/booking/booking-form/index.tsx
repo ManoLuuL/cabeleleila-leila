@@ -4,22 +4,20 @@ import { ptBR } from 'date-fns/locale'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/style.css'
 import { CalendarIcon, AlertCircle } from 'lucide-react'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { Label } from '../ui/label'
-import { ServiceSelector } from './ServiceSelector'
-import { TimeSlotPicker } from './TimeSlotPicker'
-import type { Appointment } from '../../types'
-import { useBookingForm } from '../../hooks/use-booking-form'
-import { formatShortDate } from '../../lib/date.utils'
+import { Button } from '../../ui/button'
+import { Input } from '../../ui/input'
+import { Label } from '../../ui/label'
+import { ServiceSelector } from '../booking-service-selector'
+import { TimeSlotPicker } from '../booking-time-slot-picker'
+import { useBookingForm } from '../../../hooks/use-booking-form'
+import { formatShortDate } from '../../../lib/date.utils'
+import type { BookingFormProps } from './types'
+import { StepLabel } from './components/step-label'
 
-interface BookingFormProps {
-  initialData?: Appointment
-  onSuccess: (appointment: Appointment) => void
-  onError?: (message: string) => void
-}
 
-export function BookingForm({ initialData, onSuccess, onError }: BookingFormProps) {
+export const BookingForm = (props: BookingFormProps) => {
+  const { initialData, onSuccess, onError } = props
+
   const {
     form,
     step,
@@ -52,7 +50,7 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
 
   return (
     <div className="space-y-6">
-      {/* Progress bar */}
+    
       <div className="flex gap-1">
         {[1, 2].map((s) => (
           <div
@@ -66,7 +64,7 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
 
       <AnimatePresence mode="wait">
 
-        {/* ── Step 1: Services ── */}
+       
         {step === 1 && (
           <motion.div key="step-1" variants={slideVariants} initial="enter" animate="center" exit="exit" className="space-y-4">
             <StepLabel step={1} label="Serviços" />
@@ -94,7 +92,7 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
           </motion.div>
         )}
 
-        {/* ── Step 2: Date, time & notes ── */}
+      
         {step === 2 && (
           <motion.div key="step-2" variants={slideVariants} initial="enter" animate="center" exit="exit" className="space-y-4">
             <StepLabel step={2} label="Data e horário" />
@@ -180,10 +178,4 @@ export function BookingForm({ initialData, onSuccess, onError }: BookingFormProp
   )
 }
 
-function StepLabel({ step, label }: { step: number; label: string }) {
-  return (
-    <p className="text-sm font-medium text-pink-700 uppercase tracking-wide">
-      Passo {step} — {label}
-    </p>
-  )
-}
+

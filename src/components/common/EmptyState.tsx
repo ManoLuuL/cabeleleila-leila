@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion'
 
-interface EmptyStateProps {
+type EmptyStateProps = {
   message: string
 }
 
-export function EmptyState({ message }: EmptyStateProps) {
+export const EmptyState = ({ message }: EmptyStateProps) => {
   return (
     <motion.p
       initial={{ opacity: 0 }}

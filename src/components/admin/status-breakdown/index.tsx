@@ -1,16 +1,14 @@
 import { motion } from 'framer-motion'
-import type { AppointmentStatus, WeeklyStats } from '../../types'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui'
-import { StatusBadge } from '../common/StatusBadge'
-import { STATUS_LABELS } from '../../lib/constants'
-
-interface StatusBreakdownProps {
-  stats: WeeklyStats
-}
+import type { AppointmentStatus } from '../../../types'
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui'
+import { StatusBadge } from '../../common/StatusBadge'
+import type { StatusBreakdownProps } from './types'
 
 const STATUS_KEYS: AppointmentStatus[] = ['pending', 'confirmed', 'completed', 'cancelled']
 
-export function StatusBreakdown({ stats }: StatusBreakdownProps) {
+export const StatusBreakdown = (props: StatusBreakdownProps) => {
+  const { stats } = props
+
   const countByStatus: Record<AppointmentStatus, number> = {
     pending:   stats.totalAppointments - stats.confirmedCount - stats.completedCount - stats.cancelledCount,
     confirmed: stats.confirmedCount,
@@ -49,6 +47,3 @@ export function StatusBreakdown({ stats }: StatusBreakdownProps) {
     </Card>
   )
 }
-
-// Suppress unused import warning — STATUS_LABELS used for type safety reference
-void STATUS_LABELS

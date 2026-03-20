@@ -1,27 +1,21 @@
 import { motion } from 'framer-motion'
 import { Calendar, Clock, Phone, Scissors, AlertCircle } from 'lucide-react'
-import type { Appointment } from '../../types'
-import { Card, CardContent } from '../ui'
-import { Button } from '../ui'
-import { StatusBadge } from '../common/StatusBadge'
-import { formatDisplayDate } from '../../lib/date.utils'
-import { formatCurrency } from '../../lib/currency.utils'
-import { canEditOnline } from '../../lib/date.utils'
-import { sumCents } from '../../lib/currency.utils'
+import { Card, CardContent } from '../../ui'
+import { Button } from '../../ui'
+import { StatusBadge } from '../../common/StatusBadge'
+import { formatDisplayDate } from '../../../lib/date.utils'
+import { formatCurrency } from '../../../lib/currency.utils'
+import { canEditOnline } from '../../../lib/date.utils'
+import { sumCents } from '../../../lib/currency.utils'
+import type { AppointmentCardProps } from './types'
 
-interface AppointmentCardProps {
-  appointment: Appointment
-  onEdit?: (appointment: Appointment) => void
-  onCancel?: (appointment: Appointment) => void
-  showActions?: boolean
-}
 
-export function AppointmentCard({
+export const AppointmentCard = ({
   appointment,
   onEdit,
   onCancel,
   showActions = true,
-}: AppointmentCardProps) {
+}: AppointmentCardProps) =>{
   const canEdit = canEditOnline(appointment.date)
   const total = sumCents(appointment.services.map((s) => s.priceInCents))
   const isFinished = appointment.status === 'cancelled' || appointment.status === 'completed'

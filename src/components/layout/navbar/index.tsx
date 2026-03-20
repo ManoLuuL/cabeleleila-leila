@@ -1,10 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Scissors, LayoutDashboard, CalendarDays, LogOut } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { useAuthStore } from '../../store'
-import { Button } from '../ui'
+import { useAuthStore } from '../../../store'
+import { Button } from '../../ui'
+import { NavLink } from './components/nav-link'
 
-export function Navbar() {
+export const Navbar = () => {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuthStore()
@@ -24,11 +24,11 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           <nav className="flex items-center gap-1">
-            {/* Client link — always visible when logged in */}
+
             {user && (
               <NavLink to="/" label="Agendamentos" icon={<CalendarDays className="h-4 w-4" />} active={pathname === '/'} />
             )}
-            {/* Admin link — only for admin role */}
+
             {user?.role === 'admin' && (
               <NavLink to="/admin" label="Admin" icon={<LayoutDashboard className="h-4 w-4" />} active={pathname.startsWith('/admin')} />
             )}
@@ -55,25 +55,4 @@ export function Navbar() {
   )
 }
 
-function NavLink({ to, label, icon, active }: { to: string; label: string; icon: React.ReactNode; active: boolean }) {
-  return (
-    <Link
-      to={to}
-      className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-        active ? 'text-pink-700' : 'text-gray-500 hover:text-pink-600 hover:bg-pink-50'
-      }`}
-    >
-      {active && (
-        <motion.span
-          layoutId="nav-indicator"
-          className="absolute inset-0 bg-pink-100 rounded-md"
-          transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-        />
-      )}
-      <span className="relative flex items-center gap-1.5">
-        {icon}
-        {label}
-      </span>
-    </Link>
-  )
-}
+

@@ -1,16 +1,12 @@
-/**
- * Renders the toast list from useToast hook.
- * Keeps toast rendering out of page components.
- */
 import { ToastViewport, Toast, ToastTitle, ToastDescription, ToastClose } from '../ui'
 import type { ToastMessage } from '../../types'
 
-interface ToastRendererProps {
+type ToastRendererProps = {
   toasts: ToastMessage[]
   onDismiss: (id: string) => void
 }
 
-export function ToastRenderer({ toasts, onDismiss }: ToastRendererProps) {
+export const ToastRenderer = ({ toasts, onDismiss }: ToastRendererProps) => {
   return (
     <>
       <ToastViewport />

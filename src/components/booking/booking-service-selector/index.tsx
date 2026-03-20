@@ -1,16 +1,15 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Scissors } from 'lucide-react'
-import type { Service } from '../../types'
-import { SALON_SERVICES } from '../../lib/constants'
-import { formatCurrency, sumCents } from '../../lib/currency.utils'
-import { cn } from '../../lib/utils'
+import type { ServiceSelectorProps } from './types'
+import type { Service } from '../../../types'
+import { formatCurrency, sumCents } from '../../../lib/currency.utils'
+import { SALON_SERVICES } from '../../../lib/constants'
+import { cn } from '../../../lib/utils'
 
-interface ServiceSelectorProps {
-  selected: Service[]
-  onChange: (services: Service[]) => void
-}
 
-export function ServiceSelector({ selected, onChange }: ServiceSelectorProps) {
+export const ServiceSelector = (props: ServiceSelectorProps) => {
+  const { selected, onChange } = props
+
   const toggle = (service: Service) => {
     const isSelected = selected.some((s) => s.name === service.name)
     onChange(isSelected ? selected.filter((s) => s.name !== service.name) : [...selected, service])

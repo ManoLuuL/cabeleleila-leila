@@ -1,0 +1,1 @@
+export type LegendItemProps = { color: string; label: string }

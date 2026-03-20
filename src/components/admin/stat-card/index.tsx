@@ -1,13 +1,10 @@
 import { motion } from 'framer-motion'
-import { Card, CardContent } from '../ui'
+import { Card, CardContent } from '../../ui'
+import type { StatCardProps } from './types'
 
-interface StatCardProps {
-  icon: React.ReactNode
-  label: string
-  value: string | number
-}
+export const StatCard = (props: StatCardProps) => {
+  const { icon, label, value } = props
 
-export function StatCard({ icon, label, value }: StatCardProps) {
   return (
     <motion.div whileHover={{ scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}>
       <Card>

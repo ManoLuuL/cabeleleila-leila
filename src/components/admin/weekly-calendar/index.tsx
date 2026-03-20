@@ -1,15 +1,11 @@
 import { format, eachDayOfInterval } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import type { Appointment } from '../../types'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui'
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui'
+import type { WeeklyCalendarProps } from './types'
 
-interface WeeklyCalendarProps {
-  weekStart: Date
-  weekEnd: Date
-  appointments: Appointment[]
-}
+export const WeeklyCalendar = (props: WeeklyCalendarProps) => {
+  const { weekStart, weekEnd, appointments } = props
 
-export function WeeklyCalendar({ weekStart, weekEnd, appointments }: WeeklyCalendarProps) {
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd })
 
   return (

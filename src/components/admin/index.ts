@@ -1,4 +1,4 @@
-export { StatCard } from './StatCard'
-export { WeeklyCalendar } from './WeeklyCalendar'
-export { StatusBreakdown } from './StatusBreakdown'
-export { AppointmentRow } from './AppointmentRow'
+export { StatCard } from './stat-card'
+export { WeeklyCalendar } from './weekly-calendar'
+export { StatusBreakdown } from './status-breakdown'
+export { AppointmentRow } from './appointment-row'

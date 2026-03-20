@@ -1,21 +1,18 @@
 import { motion } from 'framer-motion'
 import { Edit, Lock } from 'lucide-react'
-import type { Appointment, AppointmentStatus } from '../../types'
-import { Card, CardContent, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui'
-import { StatusBadge } from '../common/StatusBadge'
-import { formatDisplayDate } from '../../lib/date.utils'
-import { formatCurrency, sumCents } from '../../lib/currency.utils'
-import { STATUS_LABELS, ALLOWED_STATUS_TRANSITIONS } from '../../lib/constants'
-
-interface AppointmentRowProps {
-  appointment: Appointment
-  onEdit: (appointment: Appointment) => void
-  onStatusChange: (id: string, status: AppointmentStatus) => void
-}
+import type { AppointmentStatus } from '../../../types'
+import { Card, CardContent, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui'
+import { StatusBadge } from '../../common/StatusBadge'
+import { formatDisplayDate } from '../../../lib/date.utils'
+import { formatCurrency, sumCents } from '../../../lib/currency.utils'
+import { STATUS_LABELS, ALLOWED_STATUS_TRANSITIONS } from '../../../lib/constants'
+import type { AppointmentRowProps } from './types'
 
 const ALL_STATUS_OPTIONS = Object.entries(STATUS_LABELS) as [AppointmentStatus, string][]
 
-export function AppointmentRow({ appointment, onEdit, onStatusChange }: AppointmentRowProps) {
+export const AppointmentRow = (props: AppointmentRowProps) => {
+  const { appointment, onEdit, onStatusChange } = props
+
   const total = sumCents(appointment.services.map((s) => s.priceInCents))
   const isTerminal = appointment.status === 'completed' || appointment.status === 'cancelled'
   const allowedNext = ALLOWED_STATUS_TRANSITIONS[appointment.status]
@@ -65,7 +62,6 @@ export function AppointmentRow({ appointment, onEdit, onStatusChange }: Appointm
             <span className="text-sm font-semibold">{formatCurrency(total)}</span>
 
             {isTerminal ? (
-              // Terminal: just show the badge, no select
               <StatusBadge status={appointment.status} />
             ) : (
               <Select
@@ -77,8 +73,8 @@ export function AppointmentRow({ appointment, onEdit, onStatusChange }: Appointm
                 </SelectTrigger>
                 <SelectContent>
                   {ALL_STATUS_OPTIONS.map(([value, label]) => {
-                    const isCurrent  = value === appointment.status
-                    const isAllowed  = allowedNext.includes(value)
+                    const isCurrent = value === appointment.status
+                    const isAllowed = allowedNext.includes(value)
                     return (
                       <SelectItem
                         key={value}
