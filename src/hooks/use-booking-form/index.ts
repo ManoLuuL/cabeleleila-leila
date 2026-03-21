@@ -104,13 +104,13 @@ export const  useBookingForm = ({ initialData, onSuccess, onError }: UseBookingF
     try {
       if (isEditing && initialData) {
         const input: AppointmentUpdateInput = {
-          clientName: user.name,
-          clientPhone: user.phone,
-          clientEmail: user.email,
-          services: selectedServices,
-          date: format(selectedDate, 'yyyy-MM-dd'),
-          time: watchedTime,
-          notes: form.getValues('notes'),
+          clientName:  initialData.clientName,
+          clientPhone: initialData.clientPhone,
+          clientEmail: initialData.clientEmail,
+          services:    selectedServices,
+          date:        format(selectedDate, 'yyyy-MM-dd'),
+          time:        watchedTime,
+          notes:       form.getValues('notes'),
         }
         await updateAppointment(initialData.id, input)
         onSuccess({ ...initialData, ...input })
