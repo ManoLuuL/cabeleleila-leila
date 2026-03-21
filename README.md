@@ -1,143 +1,120 @@
 # ✂️ Salão da Leila — Sistema de Agendamentos
 
-Sistema web de agendamento online para o Salão de Beleza da Leila
+Sistema de agendamento online para o Salão de Beleza da Leila
 
 ---
 
-## Tecnologias Utilizadas
+## Tecnologias
 
-| Tecnologia | Descrição |
+| Tecnologia | Por que usei |
 |---|---|
-| React 19 + TypeScript | Interface e tipagem estática |
-| Vite 8 | Bundler e servidor de desenvolvimento |
-| Tailwind CSS v4 | Estilização utilitária |
-| Zustand v5 | Gerenciamento de estado global (ViewModel) |
-| React Hook Form + Zod | Formulários com validação de esquema |
-| React Router DOM v7 | Roteamento entre páginas |
-| Radix UI | Componentes acessíveis (Dialog, Tabs, Select, Toast) |
-| Framer Motion | Animações de interface |
-| date-fns | Manipulação e formatação de datas |
-| Express 5 | Servidor de API REST |
-| PostgreSQL (Neon) | Banco de dados relacional em nuvem |
-| JWT + bcryptjs | Autenticação e hash de senhas |
-| tsx | Execução de TypeScript no Node.js |
+| React 19 + TypeScript | Base do frontend com tipagem estática |
+| Vite 8 | Build rápido e HMR no desenvolvimento |
+| Tailwind CSS v4 | Estilização sem sair do JSX |
+| Zustand v5 | Estado global simples, sem boilerplate do Redux |
+| React Hook Form + Zod | Formulários com validação tipada |
+| React Router DOM v7 | Roteamento entre as páginas |
+| Radix UI | Componentes acessíveis prontos (Dialog, Tabs, Select...) |
+| Framer Motion | Animações nas transições do formulário |
+| date-fns | Manipulação de datas sem o peso do moment.js |
+| Express 5 | API REST simples para o backend |
+| PostgreSQL via Neon | Banco gratuito em nuvem, fácil de configurar |
+| JWT + bcryptjs | Autenticação stateless com senhas seguras |
 
 ---
 
 ## Arquitetura
 
-O projeto segue o padrão **MVVM (Model-View-ViewModel)** com separação clara de responsabilidades:
+Segui o padrão **MVVM** para separar bem as responsabilidades:
 
 ```
-├── server/                 # Backend Express
-│   ├── index.ts            # Configuração do servidor
-│   ├── auth.ts             # Utilitários JWT
-│   ├── db.ts               # Conexão com PostgreSQL
+Repository → Service → Store (Zustand) → Hook → Component
+```
+
+- **Repository**: só faz as chamadas HTTP, sem lógica nenhuma
+- **Service**: onde ficam todas as regras de negócio (validações, erros de domínio)
+- **Store**: conecta o service com a UI, mantém o estado em memória
+- **Hook**: gerencia o estado do formulário e mapeia erros para mensagens
+- **Component**: puramente visual, recebe dados e callbacks via props
+
+Estrutura de pastas:
+
+```
+├── server/
+│   ├── index.ts
+│   ├── auth.ts
+│   ├── db.ts
 │   └── routes/
-│       ├── auth.routes.ts        # POST /api/auth/register, /login, GET /me
-│       └── appointments.routes.ts # CRUD /api/appointments
-│
-└── src/                    # Frontend React
-    ├── pages/              # Views — ClientPage e AdminPage
-    ├── components/         # Componentes reutilizáveis de UI
-    ├── store/              # ViewModel — estado reativo com Zustand
-    ├── services/           # Regras de negócio (domínio)
-    ├── repositories/       # Acesso a dados via API REST
-    ├── hooks/              # Hooks customizados
-    ├── lib/                # Utilitários, constantes e validações
-    └── types/              # Tipagens TypeScript
+│       ├── auth.routes.ts
+│       └── appointments.routes.ts
+└── src/
+    ├── pages/
+    ├── components/
+    ├── store/
+    ├── services/
+    ├── repositories/
+    ├── hooks/
+    ├── lib/
+    └── types/
 ```
 
 ---
 
 ## Funcionalidades
 
-### Área do Cliente (`/`)
-- Página inicial pública — qualquer pessoa pode acessar
-- Agendamento de um ou mais serviços em uma única data
-- Login/cadastro solicitado ao clicar em "Novo Agendamento" (necessário para identificar o cliente)
-- Edição de agendamento (permitida até 2 dias antes da data; abaixo disso apenas por telefone)
-- Cancelamento de agendamento com mesma regra de prazo
-- Histórico completo de agendamentos (requer login)
-- Sugestão automática de data quando já existe agendamento na mesma semana para o mesmo cliente
+**Área do cliente (`/`)**
+- Página inicial pública, sem precisar logar pra ver
+- Ao clicar em "Novo Agendamento" sem estar logado, pede login/cadastro
+- Agendamento de um ou mais serviços
+- Edição e cancelamento (só até 2 dias antes — depois disso precisa ligar)
+- Histórico de agendamentos
+- Sugestão automática de data quando já tem agendamento na mesma semana
 
-### Área Administrativa (`/admin`)
-- Acesso exclusivo para a Leila (definido por e-mail no `.env`)
-- Listagem de todos os agendamentos recebidos
-- Edição de qualquer agendamento sem restrição de prazo
-- Gerenciamento de status: `Pendente → Confirmado → Concluído` / `Cancelado`
-- Dashboard semanal com navegação por semana
-- KPIs: total de agendamentos, confirmados, concluídos e receita estimada
-- Calendário semanal visual com agendamentos por dia
-- Breakdown de status em gráfico de barras
+**Painel admin (`/admin`)**
+- Acesso exclusivo para a Leila
+- Lista todos os agendamentos
+- Edita qualquer agendamento sem restrição de prazo
+- Gerencia status: Pendente → Confirmado → Concluído / Cancelado
+- Dashboard semanal com KPIs e calendário visual
 
 ---
 
-## Como Rodar o Projeto
+## Como rodar
 
-### Pré-requisitos
-- Node.js 18+
-- npm
-- Conta no [Neon](https://neon.tech) (PostgreSQL gratuito) ou outro PostgreSQL acessível
-
-### 1. Clone e instale as dependências
+**Pré-requisitos:** Node.js 18+, npm, e uma instância PostgreSQL (recomendo o [Neon](https://neon.tech) que é gratuito)
 
 ```bash
-git clone https://github.com/seu-usuario/sala-leila.git
-cd sala-leila
+# 1. instalar dependências
 npm install
-```
 
-### 2. Configure as variáveis de ambiente
-
-Copie o arquivo de exemplo e preencha com seus dados:
-
-```bash
+# 2. configurar o .env (copie o .env.example e preencha)
 cp .env.example .env
+
+# 3. criar as tabelas no banco
+npm run migrate
+
+# 4. rodar backend e frontend em terminais separados
+npm run server   # porta 3000
+npm run dev      # porta 5173
 ```
 
-Edite o `.env`:
+Acesse em `http://localhost:5173`
+
+**Criando a conta admin:** cadastre-se com o e-mail definido em `ADMIN_EMAIL` no `.env` — o sistema atribui o papel de admin automaticamente.
+
+---
+
+## Variáveis de ambiente
 
 ```env
 DATABASE_URL=postgresql://usuario:senha@host/banco?sslmode=require
-JWT_SECRET=uma_string_longa_e_aleatoria
+JWT_SECRET=qualquer_string_longa_aqui
 ADMIN_EMAIL=leila@salaoleila.com.br
 ```
 
-> O `ADMIN_EMAIL` define qual e-mail receberá o papel de administrador ao se cadastrar.
-
-### 3. Execute a migração do banco de dados
-
-Cria as tabelas `users` e `appointments`:
-
-```bash
-npm run migrate
-```
-
-### 4. Inicie o backend e o frontend
-
-Em dois terminais separados:
-
-```bash
-# Terminal 1 — servidor Express (porta 3000)
-npm run server
-
-# Terminal 2 — frontend Vite (porta 5173)
-npm run dev
-```
-
-Acesse em: **http://localhost:5173**
-
-### 5. Criando a conta de administrador
-
-1. Acesse `http://localhost:5173`
-2. Clique em "Entrar / Cadastrar" e vá para a aba "Cadastrar"
-3. Preencha com o e-mail definido em `ADMIN_EMAIL` no `.env`
-4. Após o cadastro, você será redirecionado automaticamente para `/admin`
-
 ---
 
-## Serviços Disponíveis
+## Serviços do salão
 
 | Serviço | Duração | Preço |
 |---|---|---|
@@ -149,25 +126,3 @@ Acesse em: **http://localhost:5173**
 | Pedicure | 60 min | R$ 50,00 |
 | Sobrancelha | 30 min | R$ 30,00 |
 | Progressiva | 180 min | R$ 200,00 |
-
----
-
-## Regras de Negócio
-
-- Salão fechado aos domingos
-- Horário de funcionamento: 08:00 às 18:00 (nenhum atendimento pode ultrapassar 18:00)
-- Agendamentos permitidos com até 60 dias de antecedência, nunca no passado
-- Sem conflito de horários entre agendamentos
-- Fluxo de status: `pendente → confirmado → concluído` ou qualquer → `cancelado`
-- Agendamentos `concluídos` e `cancelados` são imutáveis
-- Clientes não podem cancelar online com menos de 2 dias de antecedência (devem ligar)
-- Ao detectar agendamento do mesmo cliente na mesma semana, o sistema sugere consolidar na mesma data
-
----
-
-## Observações
-
-- Os preços são armazenados em centavos para evitar problemas de ponto flutuante.
-- A regra de edição por prazo (2 dias) é aplicada apenas na área do cliente. O admin pode editar qualquer agendamento.
-- O frontend se comunica com o backend via proxy Vite (`/api` → `localhost:3000`), sem necessidade de configurar CORS manualmente em desenvolvimento.
-- O banco de dados utilizado é o **Neon** (PostgreSQL serverless gratuito), mas qualquer PostgreSQL compatível funciona.

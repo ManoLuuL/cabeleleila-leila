@@ -4,78 +4,91 @@ import { areDatesInSameWeek, isDateInPast, isSalonClosed, isTooFarInAdvance, tod
 import { hasTimeConflict, exceedsWorkingHours } from '../lib/schedule.utils'
 import { ALLOWED_STATUS_TRANSITIONS } from '../lib/constants'
 
-// ── Domain errors ────────────────────────────────────────────────────────────
+// Erros de domínio — cada um representa uma regra de negócio específica
+// Preferi classes separadas pra facilitar o tratamento no hook sem precisar checar mensagem
 
 export class TimeConflictError extends Error {
   constructor(message = 'Horário indisponível para a data selecionada') {
-    super(message); this.name = 'TimeConflictError'
+    super(message)
+    this.name = 'TimeConflictError'
   }
 }
+
 export class PastDateError extends Error {
   constructor(message = 'Não é possível agendar para uma data passada') {
-    super(message); this.name = 'PastDateError'
+    super(message)
+    this.name = 'PastDateError'
   }
 }
+
 export class ClosedDayError extends Error {
   constructor(message = 'O salão não funciona neste dia') {
-    super(message); this.name = 'ClosedDayError'
+    super(message)
+    this.name = 'ClosedDayError'
   }
 }
+
 export class TooFarInAdvanceError extends Error {
   constructor(message = 'Agendamentos podem ser feitos com no máximo 60 dias de antecedência') {
-    super(message); this.name = 'TooFarInAdvanceError'
+    super(message)
+    this.name = 'TooFarInAdvanceError'
   }
 }
+
 export class WorkingHoursError extends Error {
   constructor(message = 'O atendimento ultrapassaria o horário de funcionamento (18:00)') {
-    super(message); this.name = 'WorkingHoursError'
+    super(message)
+    this.name = 'WorkingHoursError'
   }
 }
+
 export class DuplicateAppointmentError extends Error {
   constructor(message = 'Este cliente já possui um agendamento ativo neste dia') {
-    super(message); this.name = 'DuplicateAppointmentError'
+    super(message)
+    this.name = 'DuplicateAppointmentError'
   }
 }
+
 export class InvalidStatusTransitionError extends Error {
   constructor(from: AppointmentStatus, to: AppointmentStatus) {
-    super(`Não é possível alterar o status de "${from}" para "${to}"`); this.name = 'InvalidStatusTransitionError'
+    super(`Não é possível alterar o status de "${from}" para "${to}"`)
+    this.name = 'InvalidStatusTransitionError'
   }
 }
+
 export class ImmutableAppointmentError extends Error {
   constructor(status: AppointmentStatus) {
-    super(`Agendamentos com status "${status}" não podem ser alterados`); this.name = 'ImmutableAppointmentError'
+    super(`Agendamentos com status "${status}" não podem ser alterados`)
+    this.name = 'ImmutableAppointmentError'
   }
 }
+
 export class CancellationWindowError extends Error {
   constructor(message = 'Cancelamentos com menos de 2 dias de antecedência devem ser feitos por telefone') {
-    super(message); this.name = 'CancellationWindowError'
+    super(message)
+    this.name = 'CancellationWindowError'
   }
 }
 
-// ── Validation helpers ───────────────────────────────────────────────────────
-
-function validateDateRules(date: string): void {
-  if (isDateInPast(date))        throw new PastDateError()
-  if (isSalonClosed(date))       throw new ClosedDayError()
-  if (isTooFarInAdvance(date))   throw new TooFarInAdvanceError()
+// valida as regras de data antes de qualquer operação de agendamento
+function checkDateRules(date: string): void {
+  if (isDateInPast(date)) throw new PastDateError()
+  if (isSalonClosed(date)) throw new ClosedDayError()
+  if (isTooFarInAdvance(date)) throw new TooFarInAdvanceError()
 }
 
-function validateSchedule(
+function checkSchedule(
   all: Appointment[],
   date: string,
   time: string,
   services: Appointment['services'],
   excludeId?: string,
 ): void {
-  validateDateRules(date)
-
-  const totalDuration = services.reduce((sum, s) => sum + s.durationMinutes, 0)
-  if (exceedsWorkingHours(time, totalDuration)) throw new WorkingHoursError()
-  if (hasTimeConflict(all, date, time, totalDuration, excludeId)) throw new TimeConflictError()
+  checkDateRules(date)
+  const duration = services.reduce((sum, s) => sum + s.durationMinutes, 0)
+  if (exceedsWorkingHours(time, duration)) throw new WorkingHoursError()
+  if (hasTimeConflict(all, date, time, duration, excludeId)) throw new TimeConflictError()
 }
-
-
-// ── Service ──────────────────────────────────────────────────────────────────
 
 export const appointmentService = {
   async getAll(): Promise<Appointment[]> {
@@ -84,13 +97,11 @@ export const appointmentService = {
 
   async create(input: AppointmentCreateInput): Promise<Appointment> {
     const all = await appointmentRepository.findAll()
-    validateSchedule(all, input.date, input.time, input.services)
-
+    checkSchedule(all, input.date, input.time, input.services)
     return appointmentRepository.create(input)
   },
 
   async update(id: string, input: AppointmentUpdateInput): Promise<Appointment | null> {
-   
     const all = await appointmentRepository.findAll()
     const existing = all.find((a) => a.id === id)
     if (!existing) return null
@@ -99,19 +110,17 @@ export const appointmentService = {
       throw new ImmutableAppointmentError(existing.status)
     }
 
-    const date     = input.date        ?? existing.date
-    const time     = input.time        ?? existing.time
-    const services = input.services    ?? existing.services
+    const date = input.date ?? existing.date
+    const time = input.time ?? existing.time
+    const services = input.services ?? existing.services
 
-    const dateChanged = date !== existing.date
-    const timeChanged = time !== existing.time
-
-    if (dateChanged || timeChanged || input.services !== undefined) {
-      validateSchedule(all, date, time, services, id)
+    // só revalida horário se algo relacionado a data/hora mudou
+    const changed = date !== existing.date || time !== existing.time || input.services !== undefined
+    if (changed) {
+      checkSchedule(all, date, time, services, id)
     }
 
-    const updated = await appointmentRepository.update(id, input)
-    return updated
+    return appointmentRepository.update(id, input)
   },
 
   async updateStatus(id: string, newStatus: AppointmentStatus): Promise<Appointment | null> {
@@ -127,7 +136,7 @@ export const appointmentService = {
     return appointmentRepository.update(id, { status: newStatus })
   },
 
-  
+  // cancelamento pelo cliente tem a restrição dos 2 dias — admin usa updateStatus direto
   async cancelByClient(id: string): Promise<Appointment | null> {
     const all = await appointmentRepository.findAll()
     const existing = all.find((a) => a.id === id)

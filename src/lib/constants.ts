@@ -1,16 +1,14 @@
 import type { Service, AppointmentStatus } from '../types'
 
-// ── Working hours ────────────────────────────────────────────────────────────
 export const WORKING_HOURS = {
-  startMinutes: 8 * 60,   
-  endMinutes:   18 * 60,  
+  startMinutes: 8 * 60,
+  endMinutes: 18 * 60,
 } as const
-
 
 export const MAX_ADVANCE_DAYS = 60
 
-
-export const CLOSED_WEEKDAYS: number[] = [0] 
+// 0 = domingo
+export const CLOSED_WEEKDAYS: number[] = [0]
 
 export const TIME_SLOTS: string[] = [
   '08:00', '08:30', '09:00', '09:30',
@@ -20,16 +18,15 @@ export const TIME_SLOTS: string[] = [
   '17:00', '17:30',
 ]
 
-
 export const SALON_SERVICES: Service[] = [
-  { id: 'svc-corte',      name: 'Corte de Cabelo', durationMinutes: 45,  priceInCents: 6000  },
-  { id: 'svc-coloracao',  name: 'Coloração',        durationMinutes: 120, priceInCents: 15000 },
-  { id: 'svc-escova',     name: 'Escova',           durationMinutes: 60,  priceInCents: 7000  },
-  { id: 'svc-hidratacao', name: 'Hidratação',       durationMinutes: 60,  priceInCents: 8000  },
-  { id: 'svc-manicure',   name: 'Manicure',         durationMinutes: 45,  priceInCents: 4000  },
-  { id: 'svc-pedicure',   name: 'Pedicure',         durationMinutes: 60,  priceInCents: 5000  },
-  { id: 'svc-sobrancelha',name: 'Sobrancelha',      durationMinutes: 30,  priceInCents: 3000  },
-  { id: 'svc-progressiva',name: 'Progressiva',      durationMinutes: 180, priceInCents: 20000 },
+  { id: 'svc-corte',       name: 'Corte de Cabelo', durationMinutes: 45,  priceInCents: 6000  },
+  { id: 'svc-coloracao',   name: 'Coloração',        durationMinutes: 120, priceInCents: 15000 },
+  { id: 'svc-escova',      name: 'Escova',           durationMinutes: 60,  priceInCents: 7000  },
+  { id: 'svc-hidratacao',  name: 'Hidratação',       durationMinutes: 60,  priceInCents: 8000  },
+  { id: 'svc-manicure',    name: 'Manicure',         durationMinutes: 45,  priceInCents: 4000  },
+  { id: 'svc-pedicure',    name: 'Pedicure',         durationMinutes: 60,  priceInCents: 5000  },
+  { id: 'svc-sobrancelha', name: 'Sobrancelha',      durationMinutes: 30,  priceInCents: 3000  },
+  { id: 'svc-progressiva', name: 'Progressiva',      durationMinutes: 180, priceInCents: 20000 },
 ]
 
 export const STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -46,7 +43,7 @@ export const ALLOWED_STATUS_TRANSITIONS: Record<AppointmentStatus, AppointmentSt
   cancelled: [],
 }
 
-// Valid Brazilian DDD codes (ANATEL)
+// DDDs válidos no Brasil conforme ANATEL
 export const VALID_DDD_CODES = new Set([
   11, 12, 13, 14, 15, 16, 17, 18, 19,
   21, 22, 24,
@@ -77,23 +74,23 @@ export const VALID_DDD_CODES = new Set([
   98, 99,
 ])
 
-
 export interface ServiceWarningRule {
-  services: string[]   
+  services: string[]
   message: string
 }
 
+// avisos quando o cliente combina serviços que podem ser problemáticos juntos
 export const SERVICE_WARNING_RULES: ServiceWarningRule[] = [
   {
     services: ['Coloração', 'Progressiva'],
-    message:  'Coloração e Progressiva no mesmo dia podem danificar o cabelo. Recomendamos agendar em dias diferentes.',
+    message: 'Coloração e Progressiva no mesmo dia podem danificar o cabelo. Recomendamos agendar em dias diferentes.',
   },
   {
     services: ['Escova', 'Progressiva'],
-    message:  'A Progressiva já inclui escova ao final. Considere remover a Escova separada.',
+    message: 'A Progressiva já inclui escova ao final. Considere remover a Escova separada.',
   },
   {
     services: ['Hidratação', 'Progressiva'],
-    message:  'Hidratação após Progressiva é recomendada, mas em dias diferentes para melhor resultado.',
+    message: 'Hidratação após Progressiva é recomendada, mas em dias diferentes para melhor resultado.',
   },
 ]
